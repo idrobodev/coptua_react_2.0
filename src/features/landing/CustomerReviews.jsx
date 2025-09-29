@@ -1,6 +1,6 @@
 import React from "react";
 import Review from "./Review";
-import GradientText from "../../UI/GradientText";
+import GradientText from "components/UI/GradientText";
 
 const reviews = [
   {

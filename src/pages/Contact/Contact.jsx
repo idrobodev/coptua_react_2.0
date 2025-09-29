@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import Breadcrumbs from "../../components/features/dashboard/Breadcrumbs";
-import SEO from "../../components/features/landing/SEO";
+import Breadcrumbs from "features/dashboard/Breadcrumbs";
+import SEO from "features/landing/SEO";
 
-import GradientText from "../../components/UI/GradientText";
+import GradientText from "components/UI/GradientText";
 
 const Contact = () => {
   const [formData, setFormData] = useState({

@@ -1,0 +1,11 @@
+export { default as Banner } from './Banner';
+export { default as CustomerReviews } from './CustomerReviews';
+export { default as Feature } from './Feature';
+export { default as FeatureItem } from './FeatureItem';
+export { default as HappyCustomers } from './HappyCustomers';
+export { default as Message } from './Message';
+export { default as Review } from './Review';
+export { default as SEO } from './SEO';
+export { default as TransformationStories } from './TransformationStories';
+export { default as VisitorCounter } from './VisitorCounter';
+export { default as VisitorCounterMobile } from './VisitorCounterMobile';

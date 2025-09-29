@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import bannerVideo from "../../../assets/images/banner.webm";
+import bannerVideo from "assets/images/banner.webm";
 
 const Banner = () => {
   return (

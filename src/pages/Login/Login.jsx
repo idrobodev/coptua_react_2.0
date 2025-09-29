@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useHistory, useLocation } from "react-router-dom";
-import Breadcrumbs from "../../components/features/dashboard/Breadcrumbs";
-import { useAuth } from "../../contexts/AuthContext";
+import Breadcrumbs from "features/dashboard/Breadcrumbs";
+import { useAuth } from "contexts/AuthContext";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const Login = () => {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaMobileAlt, FaUniversity, FaCopy, FaCheck, FaQrcode, FaShieldAlt } from "react-icons/fa";
-import Breadcrumbs from "../../components/features/dashboard/Breadcrumbs";
-import SEO from "../../components/features/landing/SEO";
+import Breadcrumbs from "features/dashboard/Breadcrumbs";
+import SEO from "features/landing/SEO";
 
 const Donate = () => {
   // TODO: Reemplazar por los datos reales de donación

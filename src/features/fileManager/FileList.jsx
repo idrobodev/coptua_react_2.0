@@ -1,5 +1,5 @@
 import React from 'react';
-import { getFileType, formatFileSize, formatDate } from '../../utils/fileUtils';
+import { getFileType, formatFileSize, formatDate } from 'utils/fileUtils';
 
 const FileList = ({ files, onDownload, onDelete, isAdmin, sortBy, sortOrder, onSort }) => {
   const handleSort = (column) => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import impactoImage from "../../../assets/images/impacto.png";
+import impactoImage from "assets/images/impacto.png";
 
 const CounterAnimation = ({ target, suffix = "" }) => {
   const [count, setCount] = useState(0);

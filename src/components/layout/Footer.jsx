@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import logo from "../../assets/images/logo.png";
-import VisitorCounter from "../features/landing/VisitorCounter";
-import VisitorCounterMobile from "../features/landing/VisitorCounterMobile";
+import logo from "assets/images/logo.png";
+import VisitorCounter from "features/landing/VisitorCounter";
+import VisitorCounterMobile from "features/landing/VisitorCounterMobile";
 
 const Footer = () => {
   return (

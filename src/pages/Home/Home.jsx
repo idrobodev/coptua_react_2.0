@@ -1,10 +1,10 @@
 import React from "react";
-import Banner from "../../components/features/landing/Banner";
-import CustomerReviews from "../../components/features/landing/CustomerReviews";
-import Feature from "../../components/features/landing/Feature";
-import HappyCustomers from "./../../components/features/landing/HappyCustomers";
-import TransformationStories from "../../components/features/landing/TransformationStories";
-import SEO from "../../components/features/landing/SEO";
+import Banner from "features/landing/Banner";
+import CustomerReviews from "features/landing/CustomerReviews";
+import Feature from "features/landing/Feature";
+import HappyCustomers from "features/landing/HappyCustomers";
+import TransformationStories from "features/landing/TransformationStories";
+import SEO from "features/landing/SEO";
 
 const Home = () => {
   return (

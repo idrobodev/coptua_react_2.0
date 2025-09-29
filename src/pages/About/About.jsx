@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import Breadcrumbs from "../../components/features/dashboard/Breadcrumbs";
-import SEO from "../../components/features/landing/SEO";
-import mission from "../../assets/images/booking.jpg";
-import story from "../../assets/images/banner.png";
-import belloImage from "../../assets/images/review/1.jpg";
-import apartadoImage from "../../assets/images/sedes/apartado.jpeg";
-import GradientText from "../../components/UI/GradientText";
+import Breadcrumbs from "features/dashboard/Breadcrumbs";
+import SEO from "features/landing/SEO";
+import mission from "assets/images/booking.jpg";
+import story from "assets/images/banner.png";
+import belloImage from "assets/images/review/1.jpg";
+import apartadoImage from "assets/images/sedes/apartado.jpeg";
+import GradientText from "components/UI/GradientText";
 
 // Icons for locations
 import { FaMapMarkerAlt, FaPhone } from "react-icons/fa";

@@ -1,5 +1,5 @@
 import React from 'react';
-import useVisitorCounter from '../../../hooks/useVisitorCounter';
+import useVisitorCounter from '../../hooks/useVisitorCounter';
 
 const VisitorCounterMobile = () => {
   const { formattedCount, isLoading, isAnimating } = useVisitorCounter();

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import GradientText from '../../UI/GradientText';
+import GradientText from 'components/UI/GradientText';
 
 // Import images
-import happyImg from '../../../assets/images/happyCl.jpg';
-import bookingImg from '../../../assets/images/booking.jpg';
-import review1 from '../../../assets/images/review/1.jpg';
-import review2 from '../../../assets/images/review/2.jpg';
-import review3 from '../../../assets/images/review/3.jpg';
+import happyImg from 'assets/images/happyCl.jpg';
+import bookingImg from 'assets/images/booking.jpg';
+import review1 from 'assets/images/review/1.jpg';
+import review2 from 'assets/images/review/2.jpg';
+import review3 from 'assets/images/review/3.jpg';
 
 const TransformationStories = () => {
   // Estado de carrusel y visibilidad

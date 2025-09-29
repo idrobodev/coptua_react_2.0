@@ -1,5 +1,5 @@
 import React from 'react';
-import { getFileType, formatFileSize, formatDate } from '../../utils/fileUtils';
+import { getFileType, formatFileSize, formatDate } from 'utils/fileUtils';
 
 const FileGrid = ({ files, onDownload, onDelete, isAdmin, onPreview }) => {
   if (files.length === 0) {

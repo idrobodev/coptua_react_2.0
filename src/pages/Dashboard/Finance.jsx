@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { dbService } from "../../services/database";
 import useDebouncedSearch from "../../hooks/useDebouncedSearch";
-import LoadingSpinner from "../../components/Common/LoadingSpinner";
+import LoadingSpinner from "components/UI/LoadingSpinner";
 
 const Finance = () => {
   const [mensualidades, setMensualidades] = useState([]);

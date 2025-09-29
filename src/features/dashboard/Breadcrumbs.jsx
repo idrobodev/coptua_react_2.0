@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import heroImage from "../../../assets/images/happyCl.jpg";
+import heroImage from "assets/images/happyCl.jpg";
 
 const Breadcrumbs = ({ title }) => {
   const [scrollY, setScrollY] = useState(0);
