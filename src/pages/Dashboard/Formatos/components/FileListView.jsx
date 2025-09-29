@@ -47,11 +47,11 @@ const FileListView = ({ filteredAndSortedFiles, onDownload, onDeleteFile, isAdmi
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatFileSize(file.tamaño)}
+                  {file.tamaño ? formatFileSize(file.tamaño) : 'Desconocido'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div>
-                    {formatDate(file.createdAt)}
+                    {file.createdAt ? formatDate(file.createdAt) : 'Desconocido'}
                   </div>
                   <div className="text-xs text-gray-400">
                     {file.createdAt ? new Date(file.createdAt).toLocaleTimeString('es-ES', {

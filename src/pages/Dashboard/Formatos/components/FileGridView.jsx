@@ -49,7 +49,7 @@ const FileGridView = ({ filteredAndSortedFiles, onDownload, onDeleteFile, isAdmi
                   {file.nombre}
                 </h4>
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>{formatFileSize(file.tamaño)}</span>
+                  <span>{file.tamaño ? formatFileSize(file.tamaño) : 'Desconocido'}</span>
                   <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
                     fileType.category === 'document' ? 'bg-blue-100 text-blue-800' :
                     fileType.category === 'image' ? 'bg-purple-100 text-purple-800' :
@@ -63,7 +63,7 @@ const FileGridView = ({ filteredAndSortedFiles, onDownload, onDeleteFile, isAdmi
                   </span>
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  {formatDate(file.createdAt)}
+                  {file.createdAt ? formatDate(file.createdAt) : 'Desconocido'}
                 </div>
               </div>
             </div>

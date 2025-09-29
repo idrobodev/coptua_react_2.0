@@ -78,8 +78,14 @@ const useFileManager = () => {
   }, [checkAdmin]);
 
   useEffect(() => {
-    loadFiles();
+    const savedPath = localStorage.getItem('lastFileManagerPath') || '';
+    loadFiles(savedPath);
   }, [loadFiles]);
+
+  // Save current path to cache
+  useEffect(() => {
+    localStorage.setItem('lastFileManagerPath', currentPath);
+  }, [currentPath]);
 
   // Navigation functions
   const navigateToPath = (targetPath) => {

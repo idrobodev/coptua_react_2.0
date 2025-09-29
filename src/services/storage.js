@@ -1,6 +1,8 @@
 import { ROLES, apiClient } from './api';
 import { dbService } from './database';
 
+const STORAGE_BASE_URL = process.env.REACT_APP_STORAGE_BASE_URL;
+
 class StorageService {
   async isAdmin() {
     return await dbService.hasPermission(ROLES.ADMINISTRADOR);
@@ -16,19 +18,33 @@ class StorageService {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('path', path || '');
-
-      const response = await apiClient.post('/files/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      // Get signed URL from backend
+      const response = await apiClient.post('/storage/upload-url', {
+        path: path || '',
+        fileName: file.name,
+        contentType: file.type || 'application/octet-stream'
       });
 
+      const signedUrl = response.data.signedUrl;
+
+      // Upload to signed URL
+      const uploadResponse = await fetch(signedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream'
+        }
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const fullPath = (path ? path + '/' : '') + file.name;
+
       return {
-        path: response.data.path,
-        publicUrl: response.data.url
+        path: fullPath,
+        publicUrl: STORAGE_BASE_URL + '/' + fullPath
       };
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -42,7 +58,21 @@ class StorageService {
     }
 
     try {
-      await apiClient.delete(`/files/${encodeURIComponent(fullPath)}`);
+      // Get signed URL from backend
+      const response = await apiClient.post('/storage/delete-url', {
+        path: fullPath
+      });
+
+      const signedUrl = response.data.signedUrl;
+
+      // Delete using signed URL
+      const deleteResponse = await fetch(signedUrl, {
+        method: 'DELETE'
+      });
+
+      if (!deleteResponse.ok) {
+        throw new Error('Delete failed');
+      }
     } catch (error) {
       console.error('Error deleting file:', error);
       throw new Error(error.response?.data?.message || 'Error al eliminar archivo');
@@ -51,7 +81,7 @@ class StorageService {
 
   async listFiles(path = '') {
     try {
-      const response = await apiClient.get('/files', {
+      const response = await apiClient.get('/storage/list', {
         params: { path: path || '' }
       });
 
@@ -71,7 +101,9 @@ class StorageService {
     }
 
     try {
-      await apiClient.delete(`/files/folder/${encodeURIComponent(path)}`);
+      await apiClient.post('/storage/delete-folder', {
+        path
+      });
     } catch (error) {
       console.error('Error deleting folder:', error);
       throw new Error(error.response?.data?.message || 'Error al eliminar carpeta');
@@ -84,7 +116,7 @@ class StorageService {
     }
 
     try {
-      const response = await apiClient.post('/files/folder', {
+      const response = await apiClient.post('/storage/create-folder', {
         name: folderName,
         parentPath: parentPath || ''
       });
@@ -102,7 +134,7 @@ class StorageService {
     }
 
     try {
-      await apiClient.put('/files/folder/rename', {
+      await apiClient.post('/storage/rename-folder', {
         oldName,
         newName,
         parentPath: parentPath || ''
@@ -114,13 +146,8 @@ class StorageService {
   }
 
   async getDownloadUrl(path) {
-    try {
-      const response = await apiClient.get(`/files/download-url/${encodeURIComponent(path)}`);
-      return response.data.url;
-    } catch (error) {
-      console.error('Error getting download URL:', error);
-      throw new Error(error.response?.data?.message || 'Error al obtener URL de descarga');
-    }
+    // Return public URL
+    return STORAGE_BASE_URL + '/' + path;
   }
 }
 

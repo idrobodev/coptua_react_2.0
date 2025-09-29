@@ -216,25 +216,36 @@ class ApiService {
   // Verificar permisos del usuario
   async hasPermission(requiredRole) {
     try {
-      const { data: user } = await this.getCurrentUser();
-      
-      if (!user) return false;
+      // Consultar endpoint real en backend
+      const response = await apiClient.get('/auth/permission', {
+        params: { role: requiredRole }
+      });
 
-      const userRole = user.rol || ROLES.CONSULTA;
-      
-      // Jerarquía de roles: ADMINISTRADOR > CONSULTA
-      const roleHierarchy = {
-        [ROLES.ADMINISTRADOR]: 2,
-        [ROLES.CONSULTA]: 1
-      };
-
-      const userLevel = roleHierarchy[userRole] || 1;
-      const requiredLevel = roleHierarchy[requiredRole] || 1;
-
-      return userLevel >= requiredLevel;
+      return response.data.hasPermission || false;
     } catch (error) {
       console.error('Error verificando permisos:', error);
-      return false;
+      // Fallback temporal a verificación local si el endpoint no existe
+      try {
+        const { data: user } = await this.getCurrentUser();
+
+        if (!user) return false;
+
+        const userRole = user.rol || ROLES.CONSULTA;
+
+        // Jerarquía de roles: ADMINISTRADOR > CONSULTA
+        const roleHierarchy = {
+          [ROLES.ADMINISTRADOR]: 2,
+          [ROLES.CONSULTA]: 1
+        };
+
+        const userLevel = roleHierarchy[userRole] || 1;
+        const requiredLevel = roleHierarchy[requiredRole] || 1;
+
+        return userLevel >= requiredLevel;
+      } catch (fallbackError) {
+        console.error('Fallback también falló:', fallbackError);
+        return false;
+      }
     }
   }
 
