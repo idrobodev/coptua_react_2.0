@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Switch, useLocation } from "react-router-dom";
+import { HelmetProvider } from 'react-helmet-async';
 import AuthProvider from "./contexts/AuthContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import Footer from "./components/layout/Footer";
@@ -94,13 +95,15 @@ const AppContent = () => {
 
 function App() {
   return (
-    <div className="font-Poppins">
-      <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </AuthProvider>
-    </div>
+    <HelmetProvider>
+      <div className="font-Poppins">
+        <AuthProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </AuthProvider>
+      </div>
+    </HelmetProvider>
   );
 }
 

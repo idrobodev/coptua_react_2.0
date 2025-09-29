@@ -614,7 +614,6 @@ const Formatos = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {filteredAndSortedFiles.map((file) => {
                       const fileType = getFileType(file.nombre);
-                      const isImage = fileType.category === 'image';
 
                       return (
                         <div

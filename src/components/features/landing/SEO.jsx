@@ -1,5 +1,5 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 
 const SEO = ({ 
   title = "Todo por un Alma - Centro de Rehabilitación y Desintoxicación",

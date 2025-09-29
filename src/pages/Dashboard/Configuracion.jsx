@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../services/api";
-import { dbService } from "../../services/database";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 
 const Configuracion = () => {
@@ -30,7 +29,7 @@ const Configuracion = () => {
       const nombre = nombreInput?.value.trim();
       if (nombre && nombre !== currentUser.nombre) {
         // Update user profile via API
-        const { data, error } = await api.updateProfile({ nombre });
+        const { error } = await api.updateProfile({ nombre });
         if (error) throw new Error(error.message);
 
         setSuccess('Perfil actualizado correctamente');

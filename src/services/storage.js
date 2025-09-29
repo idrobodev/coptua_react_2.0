@@ -1,4 +1,4 @@
-import { api, ROLES, apiClient } from './api';
+import { ROLES, apiClient } from './api';
 import { dbService } from './database';
 
 class StorageService {
