@@ -1,0 +1,33 @@
+{
+  "short_name": "Todo por un Alma",
+  "name": "Todo por un Alma - Centro de Rehabilitación y Desintoxicación",
+  "description": "Centro especializado en tratamiento de adicciones que combina terapia psicológica profesional con guía espiritual basada en la Palabra de Dios.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1f2937",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "categories": ["health", "medical", "rehabilitation"],
+  "lang": "es",
+  "scope": "/",
+  "id": "todoporunalma-app"
+}

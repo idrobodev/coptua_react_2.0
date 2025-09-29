@@ -1,0 +1,22 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /login/
+Disallow: /register/
+Disallow: /private/
+
+# Allow important pages
+Allow: /
+Allow: /about/
+Allow: /programs/
+Allow: /contact/
+
+# Sitemap location
+Sitemap: https://todoporunalma.org/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1

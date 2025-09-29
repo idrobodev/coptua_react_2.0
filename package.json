@@ -1,0 +1,77 @@
+{
+    "name": "fundacion-todo-por-un-alma",
+    "version": "0.1.0",
+    "private": true,
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=8.0.0"
+    },
+    "proxy": "http://localhost:8080",
+    "scripts": {
+        "start": "cross-env BROWSER=none PORT=3001 craco start",
+        "build": "cross-env craco build",
+        "test": "craco test",
+        "eject": "react-scripts eject"
+    },
+    "dependencies": {
+        "@babel/core": "7.16.0",
+        "@craco/craco": "^7.1.0",
+        "@hookform/resolvers": "^5.2.1",
+        "@testing-library/jest-dom": "^5.11.4",
+        "@testing-library/react": "^11.1.0",
+        "@testing-library/user-event": "^12.1.10",
+        "aos": "^2.3.4",
+        "axios": "^0.24.0",
+        "chart.js": "^3.9.1",
+        "date-fns": "^4.1.0",
+        "init": "^0.1.2",
+        "jspdf": "^3.0.3",
+        "leaflet": "^1.9.4",
+        "react": "^17.0.2",
+        "react-bootstrap": "^2.10.10",
+        "react-chartjs-2": "^4.3.1",
+        "react-dom": "^17.0.2",
+        "react-dropzone": "^14.3.8",
+        "react-helmet": "^6.1.0",
+        "react-helmet-async": "^2.0.5",
+        "react-hook-form": "^7.62.0",
+        "react-icons": "^5.5.0",
+        "react-leaflet": "^3.2.5",
+        "react-router-dom": "^5.3.0",
+        "react-scripts": "5.0.1",
+        "react-youtube": "^10.1.0",
+        "uuid": "^13.0.0",
+        "web-vitals": "^1.0.1",
+        "yup": "^1.7.0"
+    },
+    "eslintConfig": {
+        "extends": [
+            "react-app",
+            "react-app/jest"
+        ]
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    },
+    "devDependencies": {
+        "@babel/plugin-proposal-class-properties": "^7.16.0",
+        "@babel/plugin-transform-runtime": "^7.16.0",
+        "@babel/preset-env": "^7.16.0",
+        "@babel/preset-react": "^7.16.0",
+        "@babel/runtime": "^7.16.0",
+        "autoprefixer": "^10.4.0",
+        "core-js": "^3.45.1",
+        "cross-env": "^7.0.3",
+        "postcss": "^8.4.0",
+        "tailwindcss": "^3.4.0"
+    }
+}
