@@ -17,8 +17,24 @@
  * - Optimized file watching with minimal CPU usage
  * - Bundle analyzer integration for size optimization
  * - CORS-enabled dev server for API integration
+ * - Enhanced error overlay that shows errors but not warnings
+ * - React Fast Refresh with state preservation during hot reload
  * 
- * Requirements addressed: 1.1, 1.2, 1.3, 1.4, 1.5, 3.2, 4.1, 4.2
+ * Fast Refresh Verification:
+ * - Fast Refresh is enabled via FAST_REFRESH=true in package.json start script
+ * - CRA's built-in react-refresh/babel plugin is preserved (not filtered out)
+ * - No duplicate React Refresh plugins in babel configuration
+ * - Component state is preserved during hot reload
+ * - Changes to components reflect immediately without full page reload
+ * 
+ * To test Fast Refresh:
+ * 1. Run: npm start
+ * 2. Open any React component (e.g., src/components/UI/GradientText.jsx)
+ * 3. Add a console.log or change some JSX
+ * 4. Save the file
+ * 5. Verify: Browser updates without full reload, component state preserved
+ * 
+ * Requirements addressed: 1.1, 1.2, 1.3, 1.4, 1.5, 3.2, 4.1, 4.2, 4.3
  */
 
 const path = require('path');
@@ -146,12 +162,16 @@ module.exports = {
 
     // Overlay configuration for better error handling
     // Shows compilation errors/warnings directly in the browser
+    // This provides immediate feedback without interfering with development workflow
     client: {
       overlay: {
         errors: true,            // Show error overlay (helpful for debugging)
         warnings: false,         // Hide warning overlay (reduces noise during development)
+        runtimeErrors: true,     // Show runtime errors in overlay
       },
       progress: false,           // Disable progress overlay (improves performance)
+      logging: 'info',           // Log level for client-side messages (none, error, warn, info, log, verbose)
+      reconnect: true,           // Auto-reconnect to dev server if connection is lost
     },
 
     // Watch options for hot reload
@@ -187,33 +207,16 @@ module.exports = {
   // BABEL CONFIGURATION
   // ============================================
   // Customizes Babel transpilation settings
-  // Note: React Refresh is disabled to avoid conflicts with CRA's built-in Fast Refresh
+  // Note: We rely on CRA's built-in React Refresh configuration
+  // The react-refresh/babel plugin is automatically included by react-scripts
   babel: {
     plugins: [
       // Custom Babel plugins can be added here
-      // Currently empty - using CRA's default Babel configuration
+      // Currently empty - using CRA's default Babel configuration with Fast Refresh
     ].filter(Boolean),
     
-    // Modify Babel loader options to remove react-refresh plugin
-    // This prevents duplicate React Refresh loaders which can cause issues
-    loaderOptions: (babelLoaderOptions) => {
-      // Remove react-refresh/babel plugin if present in the configuration
-      if (babelLoaderOptions.plugins) {
-        babelLoaderOptions.plugins = babelLoaderOptions.plugins.filter(
-          plugin => {
-            // Handle string plugin names (e.g., 'react-refresh/babel')
-            if (typeof plugin === 'string') {
-              return !plugin.includes('react-refresh');
-            }
-            // Handle array plugin configs (e.g., ['react-refresh/babel', options])
-            if (Array.isArray(plugin)) {
-              return !plugin[0].includes('react-refresh');
-            }
-            return true;
-          }
-        );
-      }
-      return babelLoaderOptions;
-    },
+    // Note: We do NOT modify loaderOptions to preserve CRA's React Refresh setup
+    // CRA automatically configures react-refresh/babel plugin when FAST_REFRESH=true
+    // Removing or filtering this plugin would break Fast Refresh functionality
   },
 };

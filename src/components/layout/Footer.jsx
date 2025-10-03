@@ -118,7 +118,7 @@ const Footer = () => {
           <div className="space-y-3">
             <div className="flex items-center">
               <i className="fas fa-hand-holding-heart mr-2"></i>
-              <Link to="/donate" className="hover:text-blue-200 transition">Donaciones en especie y efectivo</Link>
+              <Link to="/donate" className="hover:text-blue-200 transition">Donaciones</Link>
             </div>
             <div className="flex items-center">
               <i className="fas fa-hands-helping mr-2"></i>

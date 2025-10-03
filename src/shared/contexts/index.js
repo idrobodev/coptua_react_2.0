@@ -1,2 +1,2 @@
-export { default as AuthProvider, useAuth, useAuthActions } from './AuthContext';
-export { default as SidebarProvider, useSidebarContext } from './SidebarContext';
+export { default as AuthProvider, useAuth } from './AuthContext';
+export { SidebarProvider, useSidebarContext } from './SidebarContext';

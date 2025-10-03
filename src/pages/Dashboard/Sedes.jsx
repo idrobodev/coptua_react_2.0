@@ -25,7 +25,7 @@ const MapPlaceholder = ({ address, className = "" }) => {
   );
 };
 
-const Sedes = () => {
+const SedesComponent = () => {
   const [sedes, setSedes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -395,5 +395,9 @@ const Sedes = () => {
     </DashboardLayout>
   );
 };
+
+// Wrap with React.memo to prevent unnecessary re-renders
+// Component will only re-render when props change
+const Sedes = React.memo(SedesComponent);
 
 export default Sedes;

@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useHistory, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Breadcrumbs from "features/dashboard/Breadcrumbs";
 import { useAuth } from "shared/contexts";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -10,9 +10,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
-  const isMountedRef = useRef(true);
 
-  const history = useHistory();
   const location = useLocation();
   const redirect_url = location.state?.from || "/dashboard";
 
@@ -22,41 +20,18 @@ const Login = () => {
     formState: { errors },
   } = useForm();
 
-  // Cleanup function para evitar memory leaks
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
   const onSubmit = async (data) => {
     try {
-      if (!isMountedRef.current) return;
-      
       setError("");
       setLoading(true);
-      console.log('🔄 Iniciando proceso de login...', { email: data.email, redirect_url });
       
-      const result = await login(data.email, data.password);
-      console.log('✅ Login completado, resultado:', result);
-      
-      // Verificar si el componente sigue montado antes de redirigir
-      if (isMountedRef.current) {
-        console.log('🔄 Redirigiendo a:', redirect_url);
-        // Usar setTimeout para evitar problemas de timing
-        setTimeout(() => {
-          if (isMountedRef.current) {
-            history.push(redirect_url);
-          }
-        }, 100);
-      }
+      await login(data.email, data.password);
+      window.location.href = redirect_url;
     } catch (error) {
-      console.error('❌ Error en login:', error);
-      // Solo actualizar estado si el componente sigue montado
-      if (isMountedRef.current) {
-        setError(error.message || 'Error al iniciar sesión');
-        setLoading(false);
-      }
+      console.error('Error en login:', error);
+      const errorMessage = error.message || 'Error al iniciar sesión. Por favor, verifica tus credenciales.';
+      setError(errorMessage);
+      setLoading(false);
     }
   };
 

@@ -4,7 +4,7 @@ import DashboardLayout from "components/layout/DashboardLayout";
 import { dbService } from "shared/services";
 import { StatsGrid, ActionCard, LoadingState } from "components/UI";
 
-const Dashboard = () => {
+const DashboardComponent = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const history = useHistory();
@@ -121,5 +121,9 @@ const Dashboard = () => {
     </DashboardLayout>
   );
 };
+
+// Wrap with React.memo to prevent unnecessary re-renders
+// Component will only re-render when props change
+const Dashboard = React.memo(DashboardComponent);
 
 export default Dashboard;

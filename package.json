@@ -2,13 +2,13 @@
     "name": "fundacion-todo-por-un-alma",
     "version": "0.1.0",
     "private": true,
+    "proxy": "http://localhost:8080",
     "engines": {
         "node": ">=18.0.0",
         "npm": ">=8.0.0"
     },
-    "proxy": "http://localhost:8080",
     "scripts": {
-        "start": "cross-env BROWSER=none PORT=3001 FAST_REFRESH=false craco start",
+        "start": "cross-env BROWSER=none PORT=3001 FAST_REFRESH=true craco start",
         "build": "cross-env craco build",
         "test": "craco test",
         "eject": "react-scripts eject",

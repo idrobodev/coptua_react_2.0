@@ -4,7 +4,7 @@ import { api } from "shared/services";
 import DashboardLayout from "components/layout/DashboardLayout";
 import { Button, FormInput, FormGroup } from "components/UI";
 
-const Configuracion = () => {
+const ConfiguracionComponent = () => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState("perfil");
   const [loading, setLoading] = useState(false);
@@ -200,5 +200,9 @@ const Configuracion = () => {
     </DashboardLayout>
   );
 };
+
+// Wrap with React.memo to prevent unnecessary re-renders
+// Component will only re-render when props change
+const Configuracion = React.memo(ConfiguracionComponent);
 
 export default Configuracion;
