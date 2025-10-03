@@ -12,7 +12,7 @@ const Login = () => {
   const { login } = useAuth();
 
   const location = useLocation();
-  const redirect_url = location.state?.from || "/dashboard";
+  const redirect_url = location.state?.from?.pathname || "/dashboard";
 
   const {
     register,
