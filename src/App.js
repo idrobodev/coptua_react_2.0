@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, Suspense } from "react";
 import { BrowserRouter as Router, Route, Switch, useLocation } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
 import AuthProvider from "contexts/AuthContext";
@@ -7,27 +7,30 @@ import Header from "components/layout/Header";
 import PrivateRoute from "features/auth/ProtectedRoute";
 import About from "pages/About/About";
 import Contact from "pages/Contact/Contact";
-import Dashboard from "pages/Dashboard/Dashboard";
-import Finance from "pages/Dashboard/Finance";
-import Configuracion from "pages/Dashboard/Configuracion";
-import Participantes from "pages/Dashboard/Participantes";
 import Home from "pages/Home/Home";
 import Login from "pages/Login/Login";
 import NotFound from "pages/NotFound/NotFound";
 import Programs from "pages/Programs/Programs";
 import Donate from "pages/Donate/Donate";
-import Formatos from "pages/Dashboard/Formatos";
-import Sedes from "pages/Dashboard/Sedes";
+import { PerformanceDebugOverlay, LoadingSpinner } from "components/UI";
+
+// Lazy load dashboard components for better performance
+const Dashboard = React.lazy(() => import("pages/Dashboard/Dashboard"));
+const Finance = React.lazy(() => import("pages/Dashboard/Finance"));
+const Configuracion = React.lazy(() => import("pages/Dashboard/Configuracion"));
+const Participantes = React.lazy(() => import("pages/Dashboard/Participantes"));
+const Formatos = React.lazy(() => import("pages/Dashboard/Formatos"));
+const Sedes = React.lazy(() => import("pages/Dashboard/Sedes"));
 
 // Component to conditionally render header and footer
-const AppContent = () => {
+const AppContent = React.memo(() => {
   const location = useLocation();
-  const isDashboardRoute = location.pathname.startsWith('/dashboard') ||
-                          location.pathname.startsWith('/participantes') ||
-                          location.pathname.startsWith('/financiero') ||
-                          location.pathname.startsWith('/configuracion') ||
-                          location.pathname.startsWith('/formatos') ||
-                          location.pathname.startsWith('/sedes');
+  
+  // Memoize the dashboard route calculation to prevent unnecessary recalculations
+  const isDashboardRoute = useMemo(() => {
+    const dashboardPaths = ['/dashboard', '/participantes', '/financiero', '/configuracion', '/formatos', '/sedes'];
+    return dashboardPaths.some(path => location.pathname.startsWith(path));
+  }, [location.pathname]);
 
   return (
     <>
@@ -53,22 +56,34 @@ const AppContent = () => {
             <Login />
           </Route>
           <PrivateRoute path="/dashboard">
-            <Dashboard />
+            <Suspense fallback={<LoadingSpinner />}>
+              <Dashboard />
+            </Suspense>
           </PrivateRoute>
           <PrivateRoute path="/participantes">
-            <Participantes />
+            <Suspense fallback={<LoadingSpinner />}>
+              <Participantes />
+            </Suspense>
           </PrivateRoute>
           <PrivateRoute path="/financiero">
-            <Finance />
+            <Suspense fallback={<LoadingSpinner />}>
+              <Finance />
+            </Suspense>
           </PrivateRoute>
           <PrivateRoute path="/configuracion">
-            <Configuracion />
+            <Suspense fallback={<LoadingSpinner />}>
+              <Configuracion />
+            </Suspense>
           </PrivateRoute>
           <PrivateRoute path="/formatos">
-            <Formatos />
+            <Suspense fallback={<LoadingSpinner />}>
+              <Formatos />
+            </Suspense>
           </PrivateRoute>
           <PrivateRoute path="/sedes">
-            <Sedes />
+            <Suspense fallback={<LoadingSpinner />}>
+              <Sedes />
+            </Suspense>
           </PrivateRoute>
           <Route path="*">
             <NotFound />
@@ -78,7 +93,7 @@ const AppContent = () => {
       {!isDashboardRoute && <Footer />}
     </>
   );
-};
+});
 
 function App() {
   return (
@@ -87,6 +102,7 @@ function App() {
         <AuthProvider>
           <Router>
             <AppContent />
+            <PerformanceDebugOverlay />
           </Router>
         </AuthProvider>
       </div>

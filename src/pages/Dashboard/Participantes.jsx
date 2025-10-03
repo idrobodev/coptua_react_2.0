@@ -3,7 +3,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import { dbService } from "../../services/database";
 // import jsPDF from 'jspdf'; // Temporarily disabled - not available in Docker dev
 
-const Participantes = () => {
+const Participantes = React.memo(() => {
   const [participantes, setParticipantes] = useState([]); // Asegurar que siempre sea array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,6 +13,11 @@ const Participantes = () => {
     estado: "Todos",
     busqueda: ""
   });
+
+  // Memoized filter handlers to prevent unnecessary re-renders
+  const handleFilterChange = useCallback((field, value) => {
+    setFiltros(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   // Estados para modales
   const [modalAbierto, setModalAbierto] = useState(null);
@@ -61,16 +66,16 @@ const Participantes = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Funciones para manejar modales
-  const abrirModal = (tipo, participante) => {
+  // Funciones para manejar modales (memoized)
+  const abrirModal = useCallback((tipo, participante) => {
     setParticipanteSeleccionado(participante);
     setModalAbierto(tipo);
-  };
+  }, []);
 
-  const cerrarModal = () => {
+  const cerrarModal = useCallback(() => {
     setModalAbierto(null);
     setParticipanteSeleccionado(null);
-  };
+  }, []);
 
   const filteredParticipantes = useMemo(() => {
     // Asegurar que participantes siempre sea un array
@@ -95,16 +100,15 @@ const Participantes = () => {
     return filtered;
   }, [participantes, filtros]);
 
-  const getEstadoColor = (estado) => {
+  const getEstadoColor = useCallback((estado) => {
     switch (estado) {
       case "Activo": return "bg-green-100 text-green-800";
       case "Inactivo": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
     }
-  };
+  }, []);
 
-
-  const toggleEstado = async (id, newEstado) => {
+  const toggleEstado = useCallback(async (id, newEstado) => {
     try {
       await dbService.updateParticipante(id, { estado: newEstado });
       // Refresh data
@@ -113,9 +117,9 @@ const Participantes = () => {
     } catch (err) {
       console.error('Error updating status:', err);
     }
-  };
+  }, []);
 
-  const handleActionClick = (action, participante) => {
+  const handleActionClick = useCallback((action, participante) => {
     switch (action) {
       case 'ver':
         abrirModal('ver', participante);
@@ -127,9 +131,9 @@ const Participantes = () => {
         // No action
         break;
     }
-  };
+  }, [abrirModal]);
 
-  const handleExportPDF = () => {
+  const handleExportPDF = useCallback(() => {
     // Create a new window for printing
     const printWindow = window.open('', '_blank');
     const currentDate = new Date().toLocaleDateString('es-ES');
@@ -270,7 +274,7 @@ const Participantes = () => {
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-  };
+  }, [filtros, filteredParticipantes]);
 
   if (loading) {
     return (
@@ -317,7 +321,7 @@ const Participantes = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Sede</label>
             <select
               value={filtros.sede}
-              onChange={(e) => setFiltros({...filtros, sede: e.target.value})}
+              onChange={(e) => handleFilterChange('sede', e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="Todas">Todas las Sedes</option>
@@ -331,7 +335,7 @@ const Participantes = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Género</label>
             <select
               value={filtros.genero}
-              onChange={(e) => setFiltros({...filtros, genero: e.target.value})}
+              onChange={(e) => handleFilterChange('genero', e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="Todos">Todos los Géneros</option>
@@ -344,7 +348,7 @@ const Participantes = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
             <select
               value={filtros.estado}
-              onChange={(e) => setFiltros({...filtros, estado: e.target.value})}
+              onChange={(e) => handleFilterChange('estado', e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="Todos">Todos los Estados</option>
@@ -359,7 +363,7 @@ const Participantes = () => {
               type="text"
               placeholder="Nombre, teléfono..."
               value={filtros.busqueda}
-              onChange={(e) => setFiltros({...filtros, busqueda: e.target.value})}
+              onChange={(e) => handleFilterChange('busqueda', e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -572,10 +576,10 @@ const Participantes = () => {
       )}
     </DashboardLayout>
   );
-};
+});
 
-// Componente Modal para Ver Participante
-const ModalVerParticipante = ({ participante, onCerrar }) => {
+// Componente Modal para Ver Participante (memoized)
+const ModalVerParticipante = React.memo(({ participante, onCerrar }) => {
   return (
     <>
       <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -648,10 +652,10 @@ const ModalVerParticipante = ({ participante, onCerrar }) => {
       </div>
     </>
   );
-};
+});
 
-// Componente Modal para Editar Participante
-const ModalEditarParticipante = ({ participante, onCerrar, onActualizar }) => {
+// Componente Modal para Editar Participante (memoized)
+const ModalEditarParticipante = React.memo(({ participante, onCerrar, onActualizar }) => {
   const [formData, setFormData] = useState({
     nombre: participante.nombre,
     edad: participante.edad,
@@ -842,10 +846,10 @@ const ModalEditarParticipante = ({ participante, onCerrar, onActualizar }) => {
       </form>
     </>
   );
-};
+});
 
-// Componente Modal para Crear Participante
-const ModalCrearParticipante = ({ onCerrar, onCrear }) => {
+// Componente Modal para Crear Participante (memoized)
+const ModalCrearParticipante = React.memo(({ onCerrar, onCrear }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     edad: '',
@@ -1045,7 +1049,6 @@ const ModalCrearParticipante = ({ onCerrar, onCrear }) => {
       </form>
     </>
   );
-};
-
+});
 
 export default Participantes;

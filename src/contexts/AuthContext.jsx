@@ -1,9 +1,33 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { api } from "../services/api";
-const AuthContext = createContext();
 
-// Make useAuth
-export const useAuth = () => useContext(AuthContext);
+// Split contexts for better performance
+const AuthStateContext = createContext();
+const AuthActionsContext = createContext();
+
+// Hooks to access state and actions separately
+export const useAuthState = () => {
+  const context = useContext(AuthStateContext);
+  if (!context) {
+    throw new Error('useAuthState must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const useAuthActions = () => {
+  const context = useContext(AuthActionsContext);
+  if (!context) {
+    throw new Error('useAuthActions must be used within an AuthProvider');
+  }
+  return context;
+};
+
+// Backward compatibility hook
+export const useAuth = () => {
+  const state = useAuthState();
+  const actions = useAuthActions();
+  return { ...state, ...actions };
+};
 
 // Provider
 
@@ -67,8 +91,8 @@ const AuthProvider = ({ children }) => {
   }, []);
 
 
-  // User login using email password
-  const login = async (email, password) => {
+  // Memoized login function to prevent recreation on every render
+  const login = useCallback(async (email, password) => {
     try {
       console.log('🔄 Iniciando login...');
       const { data, error } = await api.login(email, password);
@@ -98,10 +122,10 @@ const AuthProvider = ({ children }) => {
       console.error('❌ Error durante login:', error);
       throw error;
     }
-  };
+  }, []);
 
-  // User logout
-  const logout = async () => {
+  // Memoized logout function to prevent recreation on every render
+  const logout = useCallback(async () => {
     try {
       console.log('🔄 Cerrando sesión...');
       // Limpiar estado local primero
@@ -127,29 +151,35 @@ const AuthProvider = ({ children }) => {
       localStorage.removeItem('currentUser');
       throw error;
     }
-  };
+  }, []);
 
-
-  // forget Password
-  const forgetPassword = async (email) => {
+  // Memoized forgetPassword function to prevent recreation on every render
+  const forgetPassword = useCallback(async (email) => {
     const { error } = await api.resetPassword(email);
     if (error) throw error;
     return { success: true };
-  };
+  }, []);
 
 
-  // Context values
-  const value = {
+  // Memoize state values to prevent unnecessary re-renders
+  const stateValue = useMemo(() => ({
     currentUser,
-    logout,
-    login,
-    forgetPassword,
     loading,
-  };
+  }), [currentUser, loading]);
+
+  // Memoize action values to prevent unnecessary re-renders
+  const actionsValue = useMemo(() => ({
+    login,
+    logout,
+    forgetPassword,
+  }), []);
+
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+    <AuthStateContext.Provider value={stateValue}>
+      <AuthActionsContext.Provider value={actionsValue}>
+        {children}
+      </AuthActionsContext.Provider>
+    </AuthStateContext.Provider>
   );
 };
 

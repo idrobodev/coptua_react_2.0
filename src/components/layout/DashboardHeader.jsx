@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useHistory } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSidebarContext } from "../../contexts/SidebarContext";
@@ -8,7 +8,7 @@ import logo from "../../assets/images/logo.png";
  * DashboardHeader - Componente reutilizable para el header del dashboard
  * Incluye menú de usuario, logo y título dinámico
  */
-const DashboardHeader = ({ title = "Dashboard", subtitle = "Bienvenido", extraActions = null }) => {
+const DashboardHeader = React.memo(({ title = "Dashboard", subtitle = "Bienvenido", extraActions = null }) => {
   const { currentUser, logout } = useAuth();
   const history = useHistory();
   const { sidebarCollapsed } = useSidebarContext();
@@ -52,7 +52,7 @@ const DashboardHeader = ({ title = "Dashboard", subtitle = "Bienvenido", extraAc
     }
   }, [history, logout]);
 
-  const handleCopyEmail = async () => {
+  const handleCopyEmail = useCallback(async () => {
     try {
       if (currentUser?.email) {
         await navigator.clipboard.writeText(currentUser.email);
@@ -61,9 +61,18 @@ const DashboardHeader = ({ title = "Dashboard", subtitle = "Bienvenido", extraAc
     } catch (e) {
       console.error('No se pudo copiar el correo', e);
     }
-  };
+  }, [currentUser?.email]);
 
-  const marginClass = sidebarCollapsed ? 'md:ml-20' : 'md:ml-64';
+  const toggleUserMenu = useCallback(() => {
+    setUserMenuOpen((v) => !v);
+  }, []);
+
+  const marginClass = useMemo(() => sidebarCollapsed ? 'md:ml-20' : 'md:ml-64', [sidebarCollapsed]);
+
+  const userDisplayName = useMemo(() => 
+    currentUser?.displayName || currentUser?.email, 
+    [currentUser?.displayName, currentUser?.email]
+  );
 
   return (
     <header className={`fixed top-0 right-0 left-0 z-40 bg-white bg-opacity-90 backdrop-blur-lg shadow-md border-b border-gray-200`}>
@@ -93,7 +102,7 @@ const DashboardHeader = ({ title = "Dashboard", subtitle = "Bienvenido", extraAc
             {/* Perfil de Usuario */}
             <div className="relative" ref={userMenuRef}>
               <button
-                onClick={() => setUserMenuOpen((v) => !v)}
+                onClick={toggleUserMenu}
                 className="flex items-center space-x-3 bg-gray-100 rounded-full pl-2 pr-3 py-1.5 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-haspopup="true"
               >
@@ -112,7 +121,7 @@ const DashboardHeader = ({ title = "Dashboard", subtitle = "Bienvenido", extraAc
                   <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
                 </div>
                 <span className="text-sm font-Poppins font-medium text-gray-700 hidden md:block">
-                  {currentUser?.displayName || currentUser?.email}
+                  {userDisplayName}
                 </span>
                 <i className={`fas fa-chevron-${userMenuOpen ? 'up' : 'down'} text-gray-500 text-xs hidden md:block`}></i>
               </button>
@@ -145,6 +154,6 @@ const DashboardHeader = ({ title = "Dashboard", subtitle = "Bienvenido", extraAc
       </div>
     </header>
   );
-};
+});
 
 export default DashboardHeader;

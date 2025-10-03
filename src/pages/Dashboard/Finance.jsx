@@ -4,7 +4,7 @@ import { dbService } from "../../services/database";
 import useDebouncedSearch from "../../hooks/useDebouncedSearch";
 import LoadingSpinner from "components/UI/LoadingSpinner";
 
-const Finance = () => {
+const Finance = React.memo(() => {
   const [mensualidades, setMensualidades] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [sedes, setSedes] = useState([]);
@@ -18,6 +18,11 @@ const Finance = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ participant_id: '', mes: '', año: new Date().getFullYear(), valor: '', status: 'PAGADO' });
+
+  // Memoized form handlers to prevent unnecessary re-renders
+  const handleFormDataChange = useCallback((field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   const months = useMemo(() => [
     { value: 1, label: 'Enero' },
@@ -34,29 +39,29 @@ const Finance = () => {
     { value: 12, label: 'Diciembre' }
   ], []);
 
-  const years = Array.from({ length: 11 }, (_, i) => 2020 + i);
+  const years = useMemo(() => Array.from({ length: 11 }, (_, i) => 2020 + i), []);
 
   const getMonthLabel = useCallback((mes) => {
     const month = months.find(m => m.value === mes);
     return month ? month.label : mes.toString();
   }, [months]);
 
-  const getToggleStatus = (status) => {
+  const getToggleStatus = useCallback((status) => {
     return status === 'PAGADO' ? 'PENDIENTE' : 'PAGADO';
-  };
+  }, []);
 
-  const getStatusClass = (status) => {
+  const getStatusClass = useCallback((status) => {
     if (status === 'PAGADO') {
       return 'bg-green-100 text-green-800 hover:bg-green-200';
     } else if (status === 'VENCIDA') {
       return 'bg-orange-100 text-orange-800 hover:bg-orange-200';
     }
     return 'bg-red-100 text-red-800 hover:bg-red-200';
-  };
+  }, []);
 
-  const getButtonTitle = (status) => {
+  const getButtonTitle = useCallback((status) => {
     return status === 'PAGADO' ? 'Cambiar a Pendiente' : 'Cambiar a Pagado';
-  };
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -131,18 +136,18 @@ const Finance = () => {
     return filteredMensualidades.slice(indexOfFirstItem, indexOfLastItem);
   }, [filteredMensualidades, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil(filteredMensualidades.length / itemsPerPage);
+  const totalPages = useMemo(() => Math.ceil(filteredMensualidades.length / itemsPerPage), [filteredMensualidades.length, itemsPerPage]);
 
-  const handlePageChange = (page) => {
+  const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
-  };
+  }, []);
 
-  const handleFilterChange = (newFiltros) => {
+  const handleFilterChange = useCallback((newFiltros) => {
     setFiltros(newFiltros);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const openModal = (type, id = null) => {
+  const openModal = useCallback((type, id = null) => {
     if (id) {
       // Pre-fill form with existing data
       const mensualidad = mensualidades.find(m => m.id === id);
@@ -160,9 +165,9 @@ const Finance = () => {
     }
     setEditingId(id);
     setShowModal(true);
-  };
+  }, [mensualidades]);
 
-  const toggleStatus = async (id, newStatus) => {
+  const toggleStatus = useCallback(async (id, newStatus) => {
     try {
       await dbService.updateMensualidad(id, { estado: newStatus });
       // Refresh data
@@ -172,9 +177,9 @@ const Finance = () => {
       console.error('Error updating status:', err);
       // Optionally show error toast
     }
-  };
+  }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     const submitData = {
       participant_id: parseInt(formData.participant_id),
@@ -196,7 +201,7 @@ const Finance = () => {
     } catch (err) {
       console.error('Error saving payment:', err);
     }
-  };
+  }, [formData, editingId]);
 
   if (loading) {
     return (
@@ -420,7 +425,7 @@ const Finance = () => {
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <select
                       value={formData.participant_id}
-                      onChange={(e) => setFormData({...formData, participant_id: e.target.value})}
+                      onChange={(e) => handleFormDataChange('participant_id', e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     >
@@ -433,7 +438,7 @@ const Finance = () => {
                     </select>
                     <select
                       value={formData.mes}
-                      onChange={(e) => setFormData({...formData, mes: e.target.value})}
+                      onChange={(e) => handleFormDataChange('mes', e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     >
@@ -444,7 +449,7 @@ const Finance = () => {
                     </select>
                     <select
                       value={formData.año}
-                      onChange={(e) => setFormData({...formData, año: e.target.value})}
+                      onChange={(e) => handleFormDataChange('año', e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     >
@@ -456,13 +461,13 @@ const Finance = () => {
                       type="number"
                       placeholder="Valor"
                       value={formData.valor}
-                      onChange={(e) => setFormData({...formData, valor: e.target.value})}
+                      onChange={(e) => handleFormDataChange('valor', e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
                     <select
                       value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      onChange={(e) => handleFormDataChange('status', e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="PAGADO">Pagado</option>
@@ -479,6 +484,6 @@ const Finance = () => {
           )}
         </DashboardLayout>
       );
-    };
+    });
 
 export default Finance;
