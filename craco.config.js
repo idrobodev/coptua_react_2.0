@@ -11,31 +11,15 @@
  */
 
 const path = require('path');
-const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 module.exports = {
   // PostCSS configuration moved to postcss.config.js
-  
+
   webpack: {
     configure: (webpackConfig, { env }) => {
       // Hot reload optimizations for development
       if (env === 'development') {
-        // Enable React Fast Refresh
-        webpackConfig.resolve.alias = {
-          ...webpackConfig.resolve.alias,
-          // Ensure consistent React version
-          'react': path.resolve('./node_modules/react'),
-          'react-dom': path.resolve('./node_modules/react-dom'),
-        };
-
-        // Optimize module resolution for faster rebuilds
-        webpackConfig.resolve.modules = [
-          path.resolve('./src'),
-          path.resolve('./node_modules'),
-          'node_modules'
-        ];
-
         // Configure source maps for better debugging without performance impact
         webpackConfig.devtool = 'eval-cheap-module-source-map';
 
@@ -62,18 +46,6 @@ module.exports = {
           poll: false,
         };
 
-        // Add React Refresh Webpack Plugin
-        const isPluginAlreadyAdded = webpackConfig.plugins.some(
-          plugin => plugin instanceof ReactRefreshWebpackPlugin
-        );
-        
-        if (!isPluginAlreadyAdded) {
-          webpackConfig.plugins.push(
-            new ReactRefreshWebpackPlugin({
-              overlay: false, // We handle overlay in devServer config
-            })
-          );
-        }
       }
 
       // Bundle analysis for development builds
@@ -127,21 +99,19 @@ module.exports = {
           })
         );
       }
-      }
 
       return webpackConfig;
     },
   },
 
   devServer: {
-    // React Fast Refresh configuration
+    // Hot reload configuration
     hot: true,
-    liveReload: false, // Disable live reload in favor of Fast Refresh
-    
+
     // Development server optimizations
     compress: true,
     historyApiFallback: true,
-    
+
     // Overlay configuration for better error handling
     client: {
       overlay: {
@@ -177,13 +147,27 @@ module.exports = {
     },
   },
 
-  // Babel configuration for Fast Refresh
+  // Babel configuration - Disable React Refresh to avoid duplicate loaders
   babel: {
     plugins: [
-      // Ensure React Fast Refresh is enabled in development
-      ...(process.env.NODE_ENV === 'development' ? [
-        require.resolve('react-refresh/babel')
-      ] : []),
-    ],
+      // Remove react-refresh babel plugin
+    ].filter(Boolean),
+    loaderOptions: (babelLoaderOptions) => {
+      // Remove react-refresh/babel plugin if present
+      if (babelLoaderOptions.plugins) {
+        babelLoaderOptions.plugins = babelLoaderOptions.plugins.filter(
+          plugin => {
+            if (typeof plugin === 'string') {
+              return !plugin.includes('react-refresh');
+            }
+            if (Array.isArray(plugin)) {
+              return !plugin[0].includes('react-refresh');
+            }
+            return true;
+          }
+        );
+      }
+      return babelLoaderOptions;
+    },
   },
 };
