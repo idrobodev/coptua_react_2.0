@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
-import DataTable from '../../components/UI/DataTable';
-import LoadingSpinner from '../../components/UI/LoadingSpinner';
-import { dbService } from '../../services/database';
+import { DataTable, LoadingSpinner } from 'components/ui';
+import { dbService } from 'shared/services';
 
 const PaymentsList = () => {
   const [payments, setPayments] = useState([]);

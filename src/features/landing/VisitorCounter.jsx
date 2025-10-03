@@ -1,5 +1,5 @@
 import React from 'react';
-import useVisitorCounter from '../../hooks/useVisitorCounter';
+import { useVisitorCounter } from 'shared/hooks';
 
 const VisitorCounter = () => {
   const { formattedCount, isLoading, isAnimating } = useVisitorCounter();

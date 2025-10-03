@@ -1,8 +1,18 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
-import { dbService } from "../../services/database";
-import useDebouncedSearch from "../../hooks/useDebouncedSearch";
-import LoadingSpinner from "components/UI/LoadingSpinner";
+import { dbService } from "shared/services";
+import { useFilters, usePagination, useModal } from "shared/hooks";
+import { 
+  LoadingSpinner, 
+  FilterBar, 
+  DataTable, 
+  Pagination,
+  StatusToggle,
+  ActionDropdown,
+  FormModal,
+  FormInput,
+  FormSelect
+} from "components/ui";
 
 const Finance = React.memo(() => {
   const [mensualidades, setMensualidades] = useState([]);
@@ -10,14 +20,16 @@ const Finance = React.memo(() => {
   const [sedes, setSedes] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filtros, setFiltros] = useState({ month: 'all', sede: 'all', year: 'all' });
-  const [debouncedSearch] = useDebouncedSearch(searchTerm);
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ participant_id: '', mes: '', año: new Date().getFullYear(), valor: '', status: 'PAGADO' });
+  
+  // Use custom hooks
+  const { filters, setFilter, clearFilters } = useFilters({ 
+    mes: 'all', 
+    sede: 'all', 
+    año: 'all',
+    busqueda: '' 
+  });
+  const { isOpen: showModal, open: openModalHook, close: closeModal, data: modalData, setData: setModalData } = useModal();
 
   // Memoized form handlers to prevent unnecessary re-renders
   const handleFormDataChange = useCallback((field, value) => {
@@ -46,22 +58,7 @@ const Finance = React.memo(() => {
     return month ? month.label : mes.toString();
   }, [months]);
 
-  const getToggleStatus = useCallback((status) => {
-    return status === 'PAGADO' ? 'PENDIENTE' : 'PAGADO';
-  }, []);
 
-  const getStatusClass = useCallback((status) => {
-    if (status === 'PAGADO') {
-      return 'bg-green-100 text-green-800 hover:bg-green-200';
-    } else if (status === 'VENCIDA') {
-      return 'bg-orange-100 text-orange-800 hover:bg-orange-200';
-    }
-    return 'bg-red-100 text-red-800 hover:bg-red-200';
-  }, []);
-
-  const getButtonTitle = useCallback((status) => {
-    return status === 'PAGADO' ? 'Cambiar a Pendiente' : 'Cambiar a Pagado';
-  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -112,60 +109,49 @@ const Finance = React.memo(() => {
     const safeMensualidades = Array.isArray(mensualidades) ? mensualidades : [];
     let filtered = safeMensualidades;
     
-    if (filtros.month !== 'all') {
-      filtered = filtered.filter(m => m.mes === parseInt(filtros.month));
+    if (filters.mes !== 'all') {
+      filtered = filtered.filter(m => m.mes === parseInt(filters.mes));
     }
-    if (filtros.sede !== 'all') {
-      filtered = filtered.filter(m => m.sede_id === parseInt(filtros.sede));
+    if (filters.sede !== 'all') {
+      filtered = filtered.filter(m => m.sede_id === parseInt(filters.sede));
     }
-    if (filtros.year !== 'all') {
-      filtered = filtered.filter(m => m.año === parseInt(filtros.year));
+    if (filters.año !== 'all') {
+      filtered = filtered.filter(m => m.año === parseInt(filters.año));
     }
-    if (debouncedSearch) {
+    if (filters.busqueda) {
       filtered = filtered.filter(m =>
-        (m.participant_name || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        getMonthLabel(m.mes).toLowerCase().includes(debouncedSearch.toLowerCase())
+        (m.participant_name || '').toLowerCase().includes(filters.busqueda.toLowerCase()) ||
+        getMonthLabel(m.mes).toLowerCase().includes(filters.busqueda.toLowerCase())
       );
     }
     return filtered;
-  }, [mensualidades, filtros, debouncedSearch, getMonthLabel]);
+  }, [mensualidades, filters, getMonthLabel]);
 
-  const paginatedMensualidades = useMemo(() => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    return filteredMensualidades.slice(indexOfFirstItem, indexOfLastItem);
-  }, [filteredMensualidades, currentPage, itemsPerPage]);
+  // Use pagination hook
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedMensualidades,
+    setPage
+  } = usePagination(filteredMensualidades, 10);
 
-  const totalPages = useMemo(() => Math.ceil(filteredMensualidades.length / itemsPerPage), [filteredMensualidades.length, itemsPerPage]);
-
-  const handlePageChange = useCallback((page) => {
-    setCurrentPage(page);
-  }, []);
-
-  const handleFilterChange = useCallback((newFiltros) => {
-    setFiltros(newFiltros);
-    setCurrentPage(1);
-  }, []);
-
-  const openModal = useCallback((type, id = null) => {
-    if (id) {
+  const openModal = useCallback((mensualidad = null) => {
+    if (mensualidad) {
       // Pre-fill form with existing data
-      const mensualidad = mensualidades.find(m => m.id === id);
-      if (mensualidad) {
-        setFormData({
-          participant_id: mensualidad.participante_id,
-          mes: mensualidad.mes,
-          año: mensualidad.año,
-          valor: mensualidad.valor,
-          status: mensualidad.estado // Use original estado
-        });
-      }
+      setFormData({
+        participant_id: mensualidad.participante_id,
+        mes: mensualidad.mes,
+        año: mensualidad.año,
+        valor: mensualidad.valor,
+        status: mensualidad.estado // Use original estado
+      });
+      setModalData(mensualidad);
     } else {
       setFormData({ participant_id: '', mes: '', año: new Date().getFullYear(), valor: '', status: 'PAGADO' });
+      setModalData(null);
     }
-    setEditingId(id);
-    setShowModal(true);
-  }, [mensualidades]);
+    openModalHook();
+  }, [openModalHook, setModalData]);
 
   const toggleStatus = useCallback(async (id, newStatus) => {
     try {
@@ -189,19 +175,18 @@ const Finance = React.memo(() => {
       status: formData.status
     };
     try {
-      if (editingId) {
-        await dbService.updateMensualidad(editingId, submitData);
+      if (modalData?.id) {
+        await dbService.updateMensualidad(modalData.id, submitData);
       } else {
         await dbService.createMensualidad(submitData);
       }
-      setShowModal(false);
-      setEditingId(null);
+      closeModal();
       const { data } = await dbService.getMensualidades();
       setMensualidades(data);
     } catch (err) {
       console.error('Error saving payment:', err);
     }
-  }, [formData, editingId]);
+  }, [formData, modalData, closeModal]);
 
   if (loading) {
     return (
@@ -236,252 +221,205 @@ const Finance = React.memo(() => {
       title="Mensualidades"
       subtitle="Pagadas, pendientes y vencidas"
       extraActions={
-        <button onClick={() => openModal('add')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <button onClick={() => openModal()} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
           <i className="fas fa-plus mr-2"></i>Nueva Mensualidad
         </button>
       }
     >
       <section className="px-6 py-6">
-            <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mes</label>
-                  <select
-                    value={filtros.month}
-                    onChange={(e) => handleFilterChange({...filtros, month: e.target.value})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  >
-                    <option value="all">Todos</option>
-                    {months.map(m => (
-                      <option key={m.value} value={m.value}>{m.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sede</label>
-                  <select
-                    value={filtros.sede}
-                    onChange={(e) => handleFilterChange({...filtros, sede: e.target.value})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  >
-                    <option value="all">Todas</option>
-                    {sedes.map(s => (
-                      <option key={s.id} value={s.id}>{s.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Año</label>
-                  <select
-                    value={filtros.year}
-                    onChange={(e) => handleFilterChange({...filtros, year: e.target.value})}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  >
-                    <option value="all">Todos</option>
-                    {years.map(y => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Búsqueda</label>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Buscar por nombre o mes..."
-                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                  />
-                </div>
-              </div>
-            </div>
+            <FilterBar
+              filters={[
+                {
+                  type: 'select',
+                  name: 'mes',
+                  label: 'Mes',
+                  placeholder: 'Todos',
+                  options: [
+                    { value: 'all', label: 'Todos' },
+                    ...months.map(m => ({ value: m.value.toString(), label: m.label }))
+                  ]
+                },
+                {
+                  type: 'select',
+                  name: 'sede',
+                  label: 'Sede',
+                  placeholder: 'Todas',
+                  options: [
+                    { value: 'all', label: 'Todas' },
+                    ...sedes.map(s => ({ value: s.id.toString(), label: s.nombre }))
+                  ]
+                },
+                {
+                  type: 'select',
+                  name: 'año',
+                  label: 'Año',
+                  placeholder: 'Todos',
+                  options: [
+                    { value: 'all', label: 'Todos' },
+                    ...years.map(y => ({ value: y.toString(), label: y.toString() }))
+                  ]
+                },
+                {
+                  type: 'search',
+                  name: 'busqueda',
+                  label: 'Búsqueda',
+                  placeholder: 'Buscar por nombre o mes...'
+                }
+              ]}
+              values={filters}
+              onChange={setFilter}
+              onClear={clearFilters}
+              showClearButton={true}
+            />
             <div className="mt-6">
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Participante
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Mes
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cantidad
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Estado
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Fecha
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Acciones
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {loading ? (
-                        <tr>
-                          <td colSpan="6" className="px-6 py-4 text-center">
-                            <LoadingSpinner size="sm" text="Cargando..." />
-                          </td>
-                        </tr>
-                      ) : paginatedMensualidades.length === 0 ? (
-                        <tr>
-                          <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                            No hay mensualidades que mostrar
-                          </td>
-                        </tr>
-                      ) : (
-                        paginatedMensualidades.map((row) => (
-                          <tr key={row.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {row.participant_name}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {getMonthLabel(row.mes)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              ${row.valor?.toLocaleString() || '0'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <button
-                                onClick={() => toggleStatus(row.id, getToggleStatus(row.status))}
-                                className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${getStatusClass(row.status)}`}
-                                title={getButtonTitle(row.status)}
-                              >
-                                {row.status}
-                              </button>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(row.fecha_vencimiento).toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex space-x-2">
-                                <button 
-                                  onClick={() => openModal('edit', row.id)} 
-                                  className="text-blue-600 hover:text-blue-900 transition-colors"
-                                >
-                                  <i className="fas fa-edit"></i>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              {totalPages > 1 && (
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 mt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-700">
-                      Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredMensualidades.length)} de {filteredMensualidades.length} resultados
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Anterior
-                      </button>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                        <button
-                          key={page}
-                          onClick={() => handlePageChange(page)}
-                          className={`px-3 py-1 text-sm font-medium rounded-md ${
-                            page === currentPage
-                              ? 'bg-blue-600 text-white'
-                              : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Siguiente
-                      </button>
-                    </div>
+              <DataTable
+                data={paginatedMensualidades}
+                columns={[
+                  {
+                    key: 'participant_name',
+                    header: 'Participante',
+                    render: (row) => (
+                      <span className="font-medium text-gray-900">{row.participant_name}</span>
+                    )
+                  },
+                  {
+                    key: 'mes',
+                    header: 'Mes',
+                    render: (row) => getMonthLabel(row.mes)
+                  },
+                  {
+                    key: 'valor',
+                    header: 'Cantidad',
+                    render: (row) => `$${row.valor?.toLocaleString() || '0'}`
+                  },
+                  {
+                    key: 'status',
+                    header: 'Estado',
+                    render: (row) => (
+                      <StatusToggle
+                        currentStatus={row.status}
+                        statuses={[
+                          { value: 'PAGADO', label: 'PAGADO', variant: 'success' },
+                          { value: 'PENDIENTE', label: 'PENDIENTE', variant: 'danger' }
+                        ]}
+                        onChange={(newStatus) => toggleStatus(row.id, newStatus)}
+                      />
+                    )
+                  },
+                  {
+                    key: 'fecha_vencimiento',
+                    header: 'Fecha',
+                    render: (row) => new Date(row.fecha_vencimiento).toLocaleDateString()
+                  },
+                  {
+                    key: 'actions',
+                    header: 'Acciones',
+                    render: (row) => (
+                      <ActionDropdown
+                        actions={[
+                          {
+                            label: 'Editar',
+                            icon: 'fas fa-edit',
+                            onClick: () => openModal(row)
+                          }
+                        ]}
+                      />
+                    )
+                  }
+                ]}
+                keyExtractor={(row) => row.id}
+                loading={loading}
+                emptyState={
+                  <div className="text-center py-8 text-gray-500">
+                    No hay mensualidades que mostrar
                   </div>
-                </div>
+                }
+              />
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  itemsPerPage={10}
+                  totalItems={filteredMensualidades.length}
+                  showInfo={true}
+                  className="mt-4"
+                />
               )}
             </div>
           </section>
 
-          {/* Modal - Updated for consistency */}
-          {showModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4">{editingId ? 'Editar Mensualidad' : 'Nueva Mensualidad'}</h3>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <select
-                      value={formData.participant_id}
-                      onChange={(e) => handleFormDataChange('participant_id', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    >
-                      <option value="">Seleccionar Participante</option>
-                      {participants.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.nombres} {p.apellidos} - {p.documento}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={formData.mes}
-                      onChange={(e) => handleFormDataChange('mes', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    >
-                      <option value="">Seleccionar Mes</option>
-                      {months.map(m => (
-                        <option key={m.value} value={m.value}>{m.label}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={formData.año}
-                      onChange={(e) => handleFormDataChange('año', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    >
-                      {years.map(y => (
-                        <option key={y} value={y}>{y}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      placeholder="Valor"
-                      value={formData.valor}
-                      onChange={(e) => handleFormDataChange('valor', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    />
-                    <select
-                      value={formData.status}
-                      onChange={(e) => handleFormDataChange('status', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="PAGADO">Pagado</option>
-                      <option value="PENDIENTE">Pendiente</option>
-                    </select>
-                    <div className="flex justify-end space-x-3">
-                      <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Cancelar</button>
-                      <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Guardar</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+          {/* Modal */}
+          <FormModal
+            isOpen={showModal}
+            onClose={closeModal}
+            title={modalData ? 'Editar Mensualidad' : 'Nueva Mensualidad'}
+            onSubmit={handleSubmit}
+            submitLabel="Guardar"
+            size="md"
+          >
+            <div className="space-y-4">
+              <FormSelect
+                label="Participante"
+                name="participant_id"
+                value={formData.participant_id}
+                onChange={(value) => handleFormDataChange('participant_id', value)}
+                options={participants.map(p => ({
+                  value: p.id,
+                  label: `${p.nombres} ${p.apellidos} - ${p.documento}`
+                }))}
+                placeholder="Seleccionar Participante"
+                required
+              />
+              
+              <FormSelect
+                label="Mes"
+                name="mes"
+                value={formData.mes}
+                onChange={(value) => handleFormDataChange('mes', value)}
+                options={months.map(m => ({
+                  value: m.value,
+                  label: m.label
+                }))}
+                placeholder="Seleccionar Mes"
+                required
+              />
+              
+              <FormSelect
+                label="Año"
+                name="año"
+                value={formData.año}
+                onChange={(value) => handleFormDataChange('año', value)}
+                options={years.map(y => ({
+                  value: y,
+                  label: y.toString()
+                }))}
+                required
+              />
+              
+              <FormInput
+                label="Valor"
+                name="valor"
+                type="number"
+                value={formData.valor}
+                onChange={(value) => handleFormDataChange('valor', value)}
+                placeholder="Valor"
+                required
+              />
+              
+              <FormSelect
+                label="Estado"
+                name="status"
+                value={formData.status}
+                onChange={(value) => handleFormDataChange('status', value)}
+                options={[
+                  { value: 'PAGADO', label: 'Pagado' },
+                  { value: 'PENDIENTE', label: 'Pendiente' }
+                ]}
+                required
+              />
             </div>
-          )}
+          </FormModal>
         </DashboardLayout>
       );
     });

@@ -1,6 +1,6 @@
 import React from 'react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import LoadingSpinner from '../../components/UI/LoadingSpinner';
+import DashboardLayout from 'components/layout/DashboardLayout';
+import { LoadingSpinner } from 'components/ui';
 import { useDropzone } from 'react-dropzone';
 import useFileManager from './Formatos/hooks/useFileManager';
 import FileBreadcrumb from './Formatos/components/FileBreadcrumb';

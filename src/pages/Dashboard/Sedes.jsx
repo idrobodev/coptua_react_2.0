@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
-import DashboardLayout from "../../components/layout/DashboardLayout";
-import { dbService } from "../../services/database";
+import DashboardLayout from "components/layout/DashboardLayout";
+import { dbService } from "shared/services";
+import { FilterBar } from "components/ui/Filter";
+import { StatsGrid } from "components/ui/Card";
+import { StatusToggle } from "components/ui/Badge";
+import { ActionDropdown } from "components/ui/Table";
+import { ViewDetailsModal, EditFormModal, CreateFormModal } from "components/common/CRUDModals";
+import { useFilters, useModal } from "shared/hooks";
 
 // Simple Map Component
 const MapPlaceholder = ({ address, className = "" }) => {
@@ -23,15 +29,16 @@ const Sedes = () => {
   const [sedes, setSedes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filtros, setFiltros] = useState({
+  
+  // Use custom hooks
+  const { filters: filtros, setFilter, clearFilters } = useFilters({
     estado: "Todos",
     busqueda: ""
   });
-
-  // Estados para modales
-  const [modalAbierto, setModalAbierto] = useState(null);
-  const [sedeSeleccionada, setSedeSeleccionada] = useState(null);
-  const [dropdownAbierto, setDropdownAbierto] = useState(null);
+  
+  const verModal = useModal();
+  const editarModal = useModal();
+  const crearModal = useModal();
 
   // Función para cargar sedes
   const loadSedes = async () => {
@@ -63,28 +70,7 @@ const Sedes = () => {
     loadSedes();
   }, []);
 
-  // Cerrar dropdown al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.dropdown-container')) {
-        setDropdownAbierto(null);
-      }
-    };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Funciones para manejar modales
-  const abrirModal = (tipo, sede) => {
-    setSedeSeleccionada(sede);
-    setModalAbierto(tipo);
-  };
-
-  const cerrarModal = () => {
-    setModalAbierto(null);
-    setSedeSeleccionada(null);
-  };
 
   const filteredSedes = useMemo(() => {
     const safeSedes = Array.isArray(sedes) ? sedes : [];
@@ -102,13 +88,26 @@ const Sedes = () => {
     return filtered;
   }, [sedes, filtros]);
 
-  const getEstadoColor = (estado) => {
-    switch (estado) {
-      case "Activa": return "bg-green-100 text-green-800";
-      case "Inactiva": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+  const statsData = useMemo(() => [
+    {
+      title: "Total Sedes",
+      value: filteredSedes.length,
+      icon: "fas fa-building",
+      color: "blue"
+    },
+    {
+      title: "Activas",
+      value: filteredSedes.filter(s => s.estado === "Activa").length,
+      icon: "fas fa-check-circle",
+      color: "green"
+    },
+    {
+      title: "Inactivas",
+      value: filteredSedes.filter(s => s.estado === "Inactiva").length,
+      icon: "fas fa-times-circle",
+      color: "red"
     }
-  };
+  ], [filteredSedes]);
 
   const toggleEstado = async (id, newEstado) => {
     try {
@@ -120,18 +119,24 @@ const Sedes = () => {
     }
   };
 
-  const handleActionClick = (action, sede) => {
-    switch (action) {
-      case 'ver':
-        abrirModal('ver', sede);
-        break;
-      case 'editar':
-        abrirModal('editar', sede);
-        break;
-      default:
-        break;
+  const filterConfig = [
+    {
+      type: 'select',
+      name: 'estado',
+      label: 'Estado',
+      options: [
+        { value: 'Todos', label: 'Todos los Estados' },
+        { value: 'Activa', label: 'Activa' },
+        { value: 'Inactiva', label: 'Inactiva' }
+      ]
+    },
+    {
+      type: 'search',
+      name: 'busqueda',
+      label: 'Búsqueda',
+      placeholder: 'Nombre, dirección...'
     }
-  };
+  ];
 
   if (loading) {
     return (
@@ -154,7 +159,7 @@ const Sedes = () => {
   return (
     <DashboardLayout title="Gestión de Sedes" subtitle="Administra las sedes de la fundación" extraActions={
       <button
-        onClick={() => abrirModal('crear', null)}
+        onClick={() => crearModal.open()}
         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
       >
         <i className="fas fa-plus mr-2"></i>
@@ -162,91 +167,17 @@ const Sedes = () => {
       </button>
     }>
       {/* Filtros */}
-      <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <select
-              value={filtros.estado}
-              onChange={(e) => setFiltros({...filtros, estado: e.target.value})}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Todos">Todos los Estados</option>
-              <option value="Activa">Activa</option>
-              <option value="Inactiva">Inactiva</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Búsqueda</label>
-            <input
-              type="text"
-              placeholder="Nombre, dirección..."
-              value={filtros.busqueda}
-              onChange={(e) => setFiltros({...filtros, busqueda: e.target.value})}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="flex items-end space-x-2">
-            <button
-              onClick={() => {
-                // Filters are applied automatically via useMemo
-                console.log('Filtros aplicados:', filtros);
-              }}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <i className="fas fa-search mr-2"></i>
-              Aplicar Filtros
-            </button>
-            <button
-              onClick={() => setFiltros({ estado: "Todos", busqueda: "" })}
-              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-              title="Limpiar filtros"
-            >
-              <i className="fas fa-times"></i>
-            </button>
-          </div>
-        </div>
-      </div>
+      <FilterBar
+        filters={filterConfig}
+        values={filtros}
+        onChange={setFilter}
+        onClear={clearFilters}
+        showClearButton={true}
+      />
 
       {/* Estadísticas Rápidas */}
       <div className="px-6 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Sedes</p>
-                <p className="text-2xl font-bold text-blue-600">{filteredSedes.length}</p>
-              </div>
-              <i className="fas fa-building text-blue-600 text-2xl"></i>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Activas</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {filteredSedes.filter(s => s.estado === "Activa").length}
-                </p>
-              </div>
-              <i className="fas fa-check-circle text-green-600 text-2xl"></i>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Inactivas</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {filteredSedes.filter(s => s.estado === "Inactiva").length}
-                </p>
-              </div>
-              <i className="fas fa-times-circle text-red-600 text-2xl"></i>
-            </div>
-          </div>
-        </div>
+        <StatsGrid stats={statsData} columns={3} />
       </div>
 
       {/* Grid de Sedes */}
@@ -268,7 +199,10 @@ const Sedes = () => {
               <div
                 key={sede.id}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer group"
-                onClick={() => abrirModal('ver', sede)}
+                onClick={() => {
+                  verModal.setData(sede);
+                  verModal.open();
+                }}
               >
                 {/* Map */}
                 <MapPlaceholder
@@ -290,17 +224,16 @@ const Sedes = () => {
                         <p className="text-sm text-gray-500">{sede.tipo || 'Principal'}</p>
                       </div>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleEstado(sede.id, sede.estado === 'Activa' ? 'Inactiva' : 'Activa');
-                      }}
-                      className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${getEstadoColor(sede.estado)} hover:opacity-80`}
-                      aria-label={`Cambiar estado de ${sede.nombre}`}
-                      title={`Cambiar estado a ${sede.estado === 'Activa' ? 'Inactiva' : 'Activa'}`}
-                    >
-                      {sede.estado}
-                    </button>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <StatusToggle
+                        currentStatus={sede.estado}
+                        statuses={[
+                          { value: 'Activa', label: 'Activa', variant: 'success' },
+                          { value: 'Inactiva', label: 'Inactiva', variant: 'danger' }
+                        ]}
+                        onChange={(newEstado) => toggleEstado(sede.id, newEstado)}
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-3">
@@ -322,7 +255,8 @@ const Sedes = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        abrirModal('ver', sede);
+                        verModal.setData(sede);
+                        verModal.open();
                       }}
                       className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                     >
@@ -330,39 +264,27 @@ const Sedes = () => {
                       Ver detalles
                     </button>
 
-                    <div className="relative dropdown-container">
-                      <button
-                        className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDropdownAbierto(dropdownAbierto === sede.id ? null : sede.id);
-                        }}
-                        aria-label="Opciones de la sede"
-                      >
-                        <i className="fas fa-ellipsis-v"></i>
-                      </button>
-                      <div className={`absolute right-0 bottom-full mb-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 ${dropdownAbierto === sede.id ? 'block' : 'hidden'}`}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleActionClick('ver', sede);
-                            setDropdownAbierto(null);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <i className="fas fa-eye mr-2"></i>Ver detalles
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleActionClick('editar', sede);
-                            setDropdownAbierto(null);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <i className="fas fa-edit mr-2"></i>Editar
-                        </button>
-                      </div>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ActionDropdown
+                        actions={[
+                          {
+                            label: 'Ver detalles',
+                            icon: 'fas fa-eye',
+                            onClick: () => {
+                              verModal.setData(sede);
+                              verModal.open();
+                            }
+                          },
+                          {
+                            label: 'Editar',
+                            icon: 'fas fa-edit',
+                            onClick: () => {
+                              editarModal.setData(sede);
+                              editarModal.open();
+                            }
+                          }
+                        ]}
+                      />
                     </div>
                   </div>
                 </div>
@@ -373,395 +295,104 @@ const Sedes = () => {
       </div>
 
       {/* Modales */}
-      {modalAbierto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            {modalAbierto === 'ver' && (
-              <ModalVerSede
-                sede={sedeSeleccionada}
-                onCerrar={cerrarModal}
-              />
-            )}
-            {modalAbierto === 'editar' && (
-              <ModalEditarSede
-                sede={sedeSeleccionada}
-                onCerrar={cerrarModal}
-                onActualizar={loadSedes}
-              />
-            )}
-            {modalAbierto === 'crear' && (
-              <ModalCrearSede
-                onCerrar={cerrarModal}
-                onCrear={loadSedes}
-              />
-            )}
-          </div>
-        </div>
-      )}
+      <ViewDetailsModal
+        isOpen={verModal.isOpen}
+        onClose={verModal.close}
+        title="Detalles de la Sede"
+        data={verModal.data ? [
+          { label: 'Nombre', value: verModal.data.nombre },
+          { label: 'Dirección', value: verModal.data.direccion, fullWidth: true },
+          { label: 'Teléfono', value: verModal.data.telefono },
+          { label: 'Estado', value: verModal.data.estado },
+          { label: 'Tipo', value: verModal.data.tipo || 'No especificado' }
+        ] : []}
+      />
+
+      <EditFormModal
+        isOpen={editarModal.isOpen}
+        onClose={editarModal.close}
+        title="Editar Sede"
+        onSubmit={async (formData) => {
+          const result = await dbService.updateSede(editarModal.data.id, formData);
+          if (result.error) {
+            throw new Error(result.error.message || 'Error al actualizar sede');
+          }
+          await loadSedes();
+        }}
+        initialData={editarModal.data}
+        fields={[
+          { name: 'nombre', label: 'Nombre', type: 'text', required: true },
+          { name: 'telefono', label: 'Teléfono', type: 'tel' },
+          { name: 'direccion', label: 'Dirección', type: 'textarea', required: true, fullWidth: true },
+          { 
+            name: 'estado', 
+            label: 'Estado', 
+            type: 'select',
+            options: [
+              { value: 'Activa', label: 'Activa' },
+              { value: 'Inactiva', label: 'Inactiva' }
+            ]
+          },
+          { 
+            name: 'tipo', 
+            label: 'Tipo', 
+            type: 'select',
+            options: [
+              { value: 'Principal', label: 'Principal' },
+              { value: 'Secundaria', label: 'Secundaria' },
+              { value: 'Temporal', label: 'Temporal' }
+            ]
+          }
+        ]}
+      />
+
+      <CreateFormModal
+        isOpen={crearModal.isOpen}
+        onClose={crearModal.close}
+        title="Nueva Sede"
+        onSubmit={async (formData) => {
+          if (!formData.nombre?.trim() || !formData.direccion?.trim()) {
+            throw new Error('Nombre y dirección son campos obligatorios');
+          }
+          const result = await dbService.createSede(formData);
+          if (result.error) {
+            throw new Error(result.error.message || 'Error al crear sede');
+          }
+          await loadSedes();
+        }}
+        initialData={{
+          nombre: '',
+          direccion: '',
+          telefono: '',
+          estado: 'Activa',
+          tipo: 'Principal'
+        }}
+        fields={[
+          { name: 'nombre', label: 'Nombre', type: 'text', required: true, placeholder: 'Nombre de la sede' },
+          { name: 'telefono', label: 'Teléfono', type: 'tel', placeholder: 'Número de teléfono' },
+          { name: 'direccion', label: 'Dirección', type: 'textarea', required: true, placeholder: 'Dirección completa de la sede', fullWidth: true },
+          { 
+            name: 'estado', 
+            label: 'Estado', 
+            type: 'select',
+            options: [
+              { value: 'Activa', label: 'Activa' },
+              { value: 'Inactiva', label: 'Inactiva' }
+            ]
+          },
+          { 
+            name: 'tipo', 
+            label: 'Tipo', 
+            type: 'select',
+            options: [
+              { value: 'Principal', label: 'Principal' },
+              { value: 'Secundaria', label: 'Secundaria' },
+              { value: 'Temporal', label: 'Temporal' }
+            ]
+          }
+        ]}
+      />
     </DashboardLayout>
-  );
-};
-
-// Componentes de modales
-const ModalVerSede = ({ sede, onCerrar }) => {
-  return (
-    <>
-      <div className="flex items-center justify-between p-6 border-b border-gray-200">
-        <h3 className="text-xl font-semibold text-gray-800">Detalles de la Sede</h3>
-        <button
-          onClick={onCerrar}
-          className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <i className="fas fa-times text-xl"></i>
-        </button>
-      </div>
-
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Nombre</label>
-              <p className="text-lg font-semibold text-gray-800">{sede.nombre}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Dirección</label>
-              <p className="text-gray-800">{sede.direccion}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Teléfono</label>
-              <p className="text-gray-800">{sede.telefono}</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Estado</label>
-              <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                sede.estado === 'Activa' ? 'bg-green-100 text-green-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                {sede.estado}
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Tipo</label>
-              <p className="text-gray-800">{sede.tipo || 'No especificado'}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-end p-6 border-t border-gray-200 space-x-3">
-        <button
-          onClick={onCerrar}
-          className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          Cerrar
-        </button>
-      </div>
-    </>
-  );
-};
-
-const ModalEditarSede = ({ sede, onCerrar, onActualizar }) => {
-  const [formData, setFormData] = useState({
-    nombre: sede.nombre,
-    direccion: sede.direccion,
-    telefono: sede.telefono,
-    estado: sede.estado,
-    tipo: sede.tipo || 'Principal'
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      console.log('🔄 Actualizando sede:', formData);
-
-      const result = await dbService.updateSede(sede.id, formData);
-
-      if (result.error) {
-        throw new Error(result.error.message || 'Error al actualizar sede');
-      }
-
-      console.log('✅ Sede actualizada exitosamente');
-      onActualizar();
-      onCerrar();
-    } catch (err) {
-      console.error('❌ Error actualizando sede:', err);
-      setError(err.message || 'Error desconocido al actualizar sede');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <div className="flex items-center justify-between p-6 border-b border-gray-200">
-        <h3 className="text-xl font-semibold text-gray-800">Editar Sede</h3>
-        <button
-          onClick={onCerrar}
-          className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <i className="fas fa-times text-xl"></i>
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="p-6">
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{error}</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nombre *</label>
-            <input
-              type="text"
-              value={formData.nombre}
-              onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
-            <input
-              type="tel"
-              value={formData.telefono}
-              onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Dirección *</label>
-            <textarea
-              value={formData.direccion}
-              onChange={(e) => setFormData({...formData, direccion: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              rows="3"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-            <select
-              value={formData.estado}
-              onChange={(e) => setFormData({...formData, estado: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Activa">Activa</option>
-              <option value="Inactiva">Inactiva</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-            <select
-              value={formData.tipo}
-              onChange={(e) => setFormData({...formData, tipo: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Principal">Principal</option>
-              <option value="Secundaria">Secundaria</option>
-              <option value="Temporal">Temporal</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex justify-end mt-6 space-x-3">
-          <button
-            type="button"
-            onClick={onCerrar}
-            disabled={loading}
-            className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <i className="fas fa-spinner fa-spin mr-2"></i>
-                Guardando...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-save mr-2"></i>
-                Guardar Cambios
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </>
-  );
-};
-
-const ModalCrearSede = ({ onCerrar, onCrear }) => {
-  const [formData, setFormData] = useState({
-    nombre: '',
-    direccion: '',
-    telefono: '',
-    estado: 'Activa',
-    tipo: 'Principal'
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      console.log('🔄 Creando sede:', formData);
-
-      if (!formData.nombre.trim() || !formData.direccion.trim()) {
-        throw new Error('Nombre y dirección son campos obligatorios');
-      }
-
-      const result = await dbService.createSede(formData);
-
-      if (result.error) {
-        throw new Error(result.error.message || 'Error al crear sede');
-      }
-
-      console.log('✅ Sede creada exitosamente');
-      onCrear();
-      onCerrar();
-    } catch (err) {
-      console.error('❌ Error creando sede:', err);
-      setError(err.message || 'Error desconocido al crear sede');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <div className="flex items-center justify-between p-6 border-b border-gray-200">
-        <h3 className="text-xl font-semibold text-gray-800">Nueva Sede</h3>
-        <button
-          onClick={onCerrar}
-          className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <i className="fas fa-times text-xl"></i>
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="p-6">
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{error}</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nombre *</label>
-            <input
-              type="text"
-              value={formData.nombre}
-              onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Nombre de la sede"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
-            <input
-              type="tel"
-              value={formData.telefono}
-              onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Número de teléfono"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Dirección *</label>
-            <textarea
-              value={formData.direccion}
-              onChange={(e) => setFormData({...formData, direccion: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Dirección completa de la sede"
-              rows="3"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-            <select
-              value={formData.estado}
-              onChange={(e) => setFormData({...formData, estado: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Activa">Activa</option>
-              <option value="Inactiva">Inactiva</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-            <select
-              value={formData.tipo}
-              onChange={(e) => setFormData({...formData, tipo: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Principal">Principal</option>
-              <option value="Secundaria">Secundaria</option>
-              <option value="Temporal">Temporal</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex justify-end mt-6 space-x-3">
-          <button
-            type="button"
-            onClick={onCerrar}
-            disabled={loading}
-            className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <i className="fas fa-spinner fa-spin mr-2"></i>
-                Creando...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-plus mr-2"></i>
-                Crear Sede
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </>
   );
 };
 

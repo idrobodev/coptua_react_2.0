@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "shared/contexts";
 import logo from "../../assets/images/logo.png";
 
 const Sidebar = ({ isOpen = false, onToggle = () => {}, isCollapsed = false, onToggleCollapse = () => {} }) => {

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useHistory, useLocation } from "react-router-dom";
 import Breadcrumbs from "features/dashboard/Breadcrumbs";
-import { useAuth } from "contexts/AuthContext";
+import { useAuth } from "shared/contexts";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const Login = () => {

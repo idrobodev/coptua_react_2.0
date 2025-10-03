@@ -1,21 +1,57 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
-const LoadingSpinner = ({ size = 'md', text = 'Cargando...', className = '' }) => {
+/**
+ * LoadingSpinner component - Reusable loading spinner with optional text
+ * 
+ * @param {Object} props
+ * @param {'sm'|'md'|'lg'|'xl'} props.size - Spinner size
+ * @param {'blue'|'gray'|'white'} props.color - Spinner color
+ * @param {string} props.text - Optional loading text
+ * @param {string} props.className - Additional CSS classes
+ */
+const LoadingSpinner = ({
+  size = 'md',
+  color = 'blue',
+  text = '',
+  className = ''
+}) => {
   const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12',
-    xl: 'h-16 w-16'
+    sm: 'w-4 h-4',
+    md: 'w-6 h-6',
+    lg: 'w-8 h-8',
+    xl: 'w-12 h-12'
+  };
+
+  const colorClasses = {
+    blue: 'text-blue-600',
+    gray: 'text-gray-600',
+    white: 'text-white'
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center p-4 ${className}`}>
-      <div className={`animate-spin rounded-full border-2 border-gray-300 border-t-primary ${sizeClasses[size]}`}></div>
+    <div className={`flex flex-col items-center justify-center ${className}`}>
+      <div
+        className={`animate-spin rounded-full border-2 border-gray-300 border-t-2 ${colorClasses[color]} ${sizeClasses[size]}`}
+        role="status"
+        aria-label="Loading"
+      >
+        <span className="sr-only">Loading...</span>
+      </div>
       {text && (
-        <p className="mt-2 text-gray-600 font-Poppins text-sm">{text}</p>
+        <p className={`mt-2 text-sm ${colorClasses[color]}`}>
+          {text}
+        </p>
       )}
     </div>
   );
+};
+
+LoadingSpinner.propTypes = {
+  size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl']),
+  color: PropTypes.oneOf(['blue', 'gray', 'white']),
+  text: PropTypes.string,
+  className: PropTypes.string
 };
 
 export default LoadingSpinner;

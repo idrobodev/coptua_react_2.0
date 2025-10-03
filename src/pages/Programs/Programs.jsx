@@ -3,7 +3,7 @@ import Breadcrumbs from "features/dashboard/Breadcrumbs";
 import mission from "assets/images/booking.jpg";
 import story from "assets/images/banner.png";
 import happyCl from "assets/images/happyCl.jpg";
-import GradientText from "components/UI/GradientText";
+import { GradientText } from "components/ui";
 
 const Programs = () => {
   const [activeTab, setActiveTab] = useState("internado");

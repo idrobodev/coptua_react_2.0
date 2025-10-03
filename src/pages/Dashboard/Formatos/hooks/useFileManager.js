@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { storage } from '../../../../services/storage';
-import { dbService, ROLES } from '../../../../services/database';
-import { getFileType } from '../../../../utils/fileUtils';
+import { storage, dbService, ROLES } from 'shared/services';
+import { getFileType } from 'shared/utils/fileUtils';
 
 const useFileManager = () => {
   // Basic state

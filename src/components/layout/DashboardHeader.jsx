@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useHistory } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
-import { useSidebarContext } from "../../contexts/SidebarContext";
+import { useAuth, useSidebarContext } from "shared/contexts";
 import logo from "../../assets/images/logo.png";
 
 /**

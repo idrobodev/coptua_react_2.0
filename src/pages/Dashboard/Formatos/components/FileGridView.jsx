@@ -1,5 +1,5 @@
 import React from 'react';
-import { getFileType, formatFileSize, formatDate } from '../../../../utils/fileUtils';
+import { getFileType, formatFileSize, formatDate } from 'shared/utils/fileUtils';
 
 const FileGridView = ({ filteredAndSortedFiles, onDownload, onDeleteFile, isAdmin }) => {
   return (

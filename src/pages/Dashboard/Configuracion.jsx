@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { useAuth } from "../../contexts/AuthContext";
-import { api } from "../../services/api";
-import DashboardLayout from "../../components/layout/DashboardLayout";
+import { useAuth } from "shared/contexts";
+import { api } from "shared/services";
+import DashboardLayout from "components/layout/DashboardLayout";
+import { Button, FormInput, FormGroup } from "components/ui";
 
 const Configuracion = () => {
   const { currentUser } = useAuth();
@@ -48,20 +49,17 @@ const Configuracion = () => {
       <section className="px-4 md:px-6 py-6">
         <div className="max-w-6xl mx-auto">
           {/* Tabs */}
-          <div className="bg-white/80 backdrop-blur rounded-xl border border-gray-200 shadow-sm p-2 flex overflow-auto">
+          <div className="bg-white/80 backdrop-blur rounded-xl border border-gray-200 shadow-sm p-2 flex overflow-auto gap-2">
             {tabs.map((t) => (
-              <button
+              <Button
                 key={t.id}
+                variant={activeTab === t.id ? "primary" : "ghost"}
+                size="sm"
+                icon={t.icon}
                 onClick={() => setActiveTab(t.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap mr-2 ${
-                  activeTab === t.id
-                    ? "bg-blue-50 text-blue-700 ring-1 ring-blue-100"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
               >
-                <i className={`${t.icon} text-sm`}></i>
                 {t.label}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -71,50 +69,48 @@ const Configuracion = () => {
               {activeTab === "perfil" && (
                 <div className="bg-white rounded-xl border border-gray-200 shadow p-6">
                   <h2 className="text-lg font-semibold mb-4">Datos de perfil</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm text-gray-600 mb-1">Nombre</label>
-                      <input
-                        className="w-full border rounded-lg px-3 py-2"
-                        defaultValue={currentUser?.user_metadata?.full_name || currentUser?.nombre || ''}
-                        id="nombre"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600 mb-1">Correo</label>
-                      <input
-                        className="w-full border rounded-lg px-3 py-2"
-                        value={currentUser?.email || ''}
-                        readOnly
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600 mb-1">Rol</label>
-                      <input
-                        className="w-full border rounded-lg px-3 py-2 bg-gray-100"
-                        value={currentUser?.rol || ''}
-                        readOnly
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm text-gray-600 mb-1">Sede</label>
-                      <input
-                        className="w-full border rounded-lg px-3 py-2"
-                        defaultValue={currentUser?.sede_nombre || 'No asignada'}
-                        readOnly
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <button
+                  <FormGroup columns={2} gap="md">
+                    <FormInput
+                      label="Nombre"
+                      name="nombre"
+                      value={currentUser?.user_metadata?.full_name || currentUser?.nombre || ''}
+                      onChange={() => {}}
+                    />
+                    <FormInput
+                      label="Correo"
+                      name="email"
+                      type="email"
+                      value={currentUser?.email || ''}
+                      onChange={() => {}}
+                      disabled
+                    />
+                    <FormInput
+                      label="Rol"
+                      name="rol"
+                      value={currentUser?.rol || ''}
+                      onChange={() => {}}
+                      disabled
+                    />
+                    <FormInput
+                      label="Sede"
+                      name="sede"
+                      value={currentUser?.sede_nombre || 'No asignada'}
+                      onChange={() => {}}
+                      disabled
+                      className="md:col-span-2"
+                    />
+                  </FormGroup>
+                  <div className="mt-4 flex items-center gap-4">
+                    <Button
+                      variant="primary"
+                      icon="fas fa-save"
                       onClick={handleProfileUpdate}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={loading}
+                      loading={loading}
                     >
-                      {loading ? 'Guardando...' : 'Guardar cambios'}
-                    </button>
-                    {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-                    {success && <p className="text-green-500 text-sm mt-2">{success}</p>}
+                      Guardar cambios
+                    </Button>
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
+                    {success && <p className="text-green-500 text-sm">{success}</p>}
                   </div>
                 </div>
               )}
@@ -150,22 +146,34 @@ const Configuracion = () => {
               {activeTab === "seguridad" && (
                 <div className="bg-white rounded-xl border border-gray-200 shadow p-6">
                   <h2 className="text-lg font-semibold mb-4">Seguridad</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm text-gray-600 mb-1">Contraseña actual</label>
-                      <input type="password" className="w-full border rounded-lg px-3 py-2" />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600 mb-1">Nueva contraseña</label>
-                      <input type="password" className="w-full border rounded-lg px-3 py-2" />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600 mb-1">Confirmar nueva contraseña</label>
-                      <input type="password" className="w-full border rounded-lg px-3 py-2" />
-                    </div>
-                  </div>
+                  <FormGroup columns={2} gap="md">
+                    <FormInput
+                      label="Contraseña actual"
+                      name="currentPassword"
+                      type="password"
+                      value=""
+                      onChange={() => {}}
+                      className="md:col-span-2"
+                    />
+                    <FormInput
+                      label="Nueva contraseña"
+                      name="newPassword"
+                      type="password"
+                      value=""
+                      onChange={() => {}}
+                    />
+                    <FormInput
+                      label="Confirmar nueva contraseña"
+                      name="confirmPassword"
+                      type="password"
+                      value=""
+                      onChange={() => {}}
+                    />
+                  </FormGroup>
                   <div className="mt-4">
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Actualizar contraseña</button>
+                    <Button variant="primary" icon="fas fa-lock">
+                      Actualizar contraseña
+                    </Button>
                   </div>
                 </div>
               )}

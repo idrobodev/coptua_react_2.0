@@ -1,28 +1,28 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import DashboardLayout from "../../components/layout/DashboardLayout";
-import { dbService } from "../../services/database";
+import DashboardLayout from "components/layout/DashboardLayout";
+import { dbService } from "shared/services";
+import { FilterBar, StatsGrid, DataTable, ActionDropdown, StatusToggle, FormInput, FormSelect, FormGroup } from "components/ui";
+import { ViewDetailsModal, EditFormModal, CreateFormModal } from "components/common";
+import { useFilters, useModal } from "shared/hooks";
 // import jsPDF from 'jspdf'; // Temporarily disabled - not available in Docker dev
 
 const Participantes = React.memo(() => {
   const [participantes, setParticipantes] = useState([]); // Asegurar que siempre sea array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filtros, setFiltros] = useState({
+  
+  // Use the useFilters hook for filter state management
+  const { filters: filtros, setFilter, clearFilters } = useFilters({
     sede: "Todas",
     genero: "Todos",
     estado: "Todos",
     busqueda: ""
   });
 
-  // Memoized filter handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback((field, value) => {
-    setFiltros(prev => ({ ...prev, [field]: value }));
-  }, []);
-
-  // Estados para modales
-  const [modalAbierto, setModalAbierto] = useState(null);
-  const [participanteSeleccionado, setParticipanteSeleccionado] = useState(null);
-  const [dropdownAbierto, setDropdownAbierto] = useState(null);
+  // Use the useModal hook for modal state management
+  const viewModal = useModal();
+  const editModal = useModal();
+  const createModal = useModal();
 
   // Función para cargar participantes (usando useCallback para evitar re-renders)
   const loadParticipantes = useCallback(async () => {
@@ -54,28 +54,16 @@ const Participantes = React.memo(() => {
     loadParticipantes();
   }, [loadParticipantes]);
 
-  // Cerrar dropdown al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.dropdown-container')) {
-        setDropdownAbierto(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   // Funciones para manejar modales (memoized)
   const abrirModal = useCallback((tipo, participante) => {
-    setParticipanteSeleccionado(participante);
-    setModalAbierto(tipo);
-  }, []);
-
-  const cerrarModal = useCallback(() => {
-    setModalAbierto(null);
-    setParticipanteSeleccionado(null);
-  }, []);
+    if (tipo === 'ver') {
+      viewModal.openModal(null, participante);
+    } else if (tipo === 'editar') {
+      editModal.openModal(null, participante);
+    } else if (tipo === 'crear') {
+      createModal.openModal();
+    }
+  }, [viewModal, editModal, createModal]);
 
   const filteredParticipantes = useMemo(() => {
     // Asegurar que participantes siempre sea un array
@@ -99,14 +87,6 @@ const Participantes = React.memo(() => {
     }
     return filtered;
   }, [participantes, filtros]);
-
-  const getEstadoColor = useCallback((estado) => {
-    switch (estado) {
-      case "Activo": return "bg-green-100 text-green-800";
-      case "Inactivo": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  }, []);
 
   const toggleEstado = useCallback(async (id, newEstado) => {
     try {
@@ -315,133 +295,93 @@ const Participantes = React.memo(() => {
       </div>
     }>
       {/* Filtros */}
-      <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sede</label>
-            <select
-              value={filtros.sede}
-              onChange={(e) => handleFilterChange('sede', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Todas">Todas las Sedes</option>
-              <option value="Bello Principal">Bello Principal</option>
-              <option value="Bello Campestre">Bello Campestre</option>
-              <option value="Apartadó">Apartadó</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Género</label>
-            <select
-              value={filtros.genero}
-              onChange={(e) => handleFilterChange('genero', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Todos">Todos los Géneros</option>
-              <option value="MASCULINO">Masculino</option>
-              <option value="FEMENINO">Femenino</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <select
-              value={filtros.estado}
-              onChange={(e) => handleFilterChange('estado', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Todos">Todos los Estados</option>
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Búsqueda</label>
-            <input
-              type="text"
-              placeholder="Nombre, teléfono..."
-              value={filtros.busqueda}
-              onChange={(e) => handleFilterChange('busqueda', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          
-          <div className="flex items-end">
-            <button className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
-              <i className="fas fa-search mr-2"></i>
-              Filtrar
-            </button>
-          </div>
-        </div>
-      </div>
+      <FilterBar
+        filters={[
+          {
+            type: 'select',
+            name: 'sede',
+            label: 'Sede',
+            options: [
+              { value: 'Todas', label: 'Todas las Sedes' },
+              { value: 'Bello Principal', label: 'Bello Principal' },
+              { value: 'Bello Campestre', label: 'Bello Campestre' },
+              { value: 'Apartadó', label: 'Apartadó' }
+            ]
+          },
+          {
+            type: 'select',
+            name: 'genero',
+            label: 'Género',
+            options: [
+              { value: 'Todos', label: 'Todos los Géneros' },
+              { value: 'MASCULINO', label: 'Masculino' },
+              { value: 'FEMENINO', label: 'Femenino' }
+            ]
+          },
+          {
+            type: 'select',
+            name: 'estado',
+            label: 'Estado',
+            options: [
+              { value: 'Todos', label: 'Todos los Estados' },
+              { value: 'Activo', label: 'Activo' },
+              { value: 'Inactivo', label: 'Inactivo' }
+            ]
+          },
+          {
+            type: 'search',
+            name: 'busqueda',
+            placeholder: 'Nombre, teléfono...',
+            debounceMs: 300
+          }
+        ]}
+        values={filtros}
+        onChange={setFilter}
+        onClear={clearFilters}
+        showClearButton={true}
+      />
 
 
       {/* Estadísticas Rápidas */}
       <div className="px-6 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Participantes</p>
-                <p className="text-2xl font-bold text-blue-600">{filteredParticipantes.length}</p>
-              </div>
-              <i className="fas fa-users text-blue-600 text-2xl"></i>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Activos</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {filteredParticipantes.filter(p => p.estado === "Activo").length}
-                </p>
-              </div>
-              <i className="fas fa-user-check text-green-600 text-2xl"></i>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Inactivos</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {filteredParticipantes.filter(p => p.estado === "Inactivo").length}
-                </p>
-              </div>
-              <i className="fas fa-user-times text-red-600 text-2xl"></i>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Promedio Edad</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {filteredParticipantes.length > 0
-                    ? Math.round(filteredParticipantes.reduce((sum, p) => sum + (p.edad || 0), 0) / filteredParticipantes.length)
-                    : 0
-                  } años
-                </p>
-              </div>
-              <i className="fas fa-birthday-cake text-blue-600 text-2xl"></i>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Sedes Bello</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {filteredParticipantes.filter(p => p.sede && p.sede.toLowerCase().includes("bello")).length}
-                </p>
-              </div>
-              <i className="fas fa-map-marker-alt text-purple-600 text-2xl"></i>
-            </div>
-          </div>
-        </div>
+        <StatsGrid
+          stats={[
+            {
+              title: 'Total Participantes',
+              value: filteredParticipantes.length,
+              icon: 'fas fa-users',
+              color: 'blue'
+            },
+            {
+              title: 'Activos',
+              value: filteredParticipantes.filter(p => p.estado === "Activo").length,
+              icon: 'fas fa-user-check',
+              color: 'green'
+            },
+            {
+              title: 'Inactivos',
+              value: filteredParticipantes.filter(p => p.estado === "Inactivo").length,
+              icon: 'fas fa-user-times',
+              color: 'red'
+            },
+            {
+              title: 'Promedio Edad',
+              value: filteredParticipantes.length > 0
+                ? `${Math.round(filteredParticipantes.reduce((sum, p) => sum + (p.edad || 0), 0) / filteredParticipantes.length)} años`
+                : '0 años',
+              icon: 'fas fa-birthday-cake',
+              color: 'blue'
+            },
+            {
+              title: 'Sedes Bello',
+              value: filteredParticipantes.filter(p => p.sede && p.sede.toLowerCase().includes("bello")).length,
+              icon: 'fas fa-map-marker-alt',
+              color: 'purple'
+            }
+          ]}
+          columns={5}
+          gap="md"
+        />
       </div>
 
       {/* Tabla de Participantes */}
@@ -451,604 +391,315 @@ const Participantes = React.memo(() => {
             <h3 className="text-lg font-semibold text-gray-800">Lista de Participantes</h3>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Participante
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Género
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Sede
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredParticipantes.map((participante) => (
-                  <tr key={participante.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <i className="fas fa-user text-blue-600"></i>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {participante.nombre}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {participante.edad} años • {participante.telefono}
-                          </div>
-                        </div>
+          <DataTable
+            data={filteredParticipantes}
+            keyExtractor={(row) => row.id}
+            columns={[
+              {
+                key: 'participante',
+                header: 'Participante',
+                render: (row) => (
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <i className="fas fa-user text-blue-600"></i>
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">
+                        {row.nombre}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {participante.genero === 'MASCULINO' ? 'Masculino' : participante.genero === 'FEMENINO' ? 'Femenino' : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {participante.sede}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => toggleEstado(participante.id, participante.estado === 'Activo' ? 'Inactivo' : 'Activo')}
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${getEstadoColor(participante.estado)} hover:opacity-80`}
-                        aria-label={`Cambiar estado de ${participante.nombre} a ${participante.estado === 'Activo' ? 'Inactivo' : 'Activo'}`}
-                        title={`Cambiar estado a ${participante.estado === 'Activo' ? 'Inactivo' : 'Activo'}`}
-                      >
-                        {participante.estado}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="relative dropdown-container">
-                        <button
-                          className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDropdownAbierto(dropdownAbierto === participante.id ? null : participante.id);
-                          }}
-                          aria-label="Opciones del participante"
-                        >
-                          <i className="fas fa-ellipsis-v"></i>
-                        </button>
-                        <div className={`absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 ${dropdownAbierto === participante.id ? 'block' : 'hidden'}`}>
-                          <button
-                            onClick={() => {
-                              handleActionClick('ver', participante);
-                              setDropdownAbierto(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            <i className="fas fa-eye mr-2"></i>Ver detalles
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleActionClick('editar', participante);
-                              setDropdownAbierto(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            <i className="fas fa-edit mr-2"></i>Editar
-                          </button>
-                        </div>
+                      <div className="text-sm text-gray-500">
+                        {row.edad} años • {row.telefono}
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                )
+              },
+              {
+                key: 'genero',
+                header: 'Género',
+                render: (row) => (
+                  row.genero === 'MASCULINO' ? 'Masculino' : row.genero === 'FEMENINO' ? 'Femenino' : 'N/A'
+                )
+              },
+              {
+                key: 'sede',
+                header: 'Sede',
+                render: (row) => row.sede
+              },
+              {
+                key: 'estado',
+                header: 'Estado',
+                render: (row) => (
+                  <StatusToggle
+                    currentStatus={row.estado}
+                    statuses={[
+                      { value: 'Activo', label: 'Activo', variant: 'success' },
+                      { value: 'Inactivo', label: 'Inactivo', variant: 'danger' }
+                    ]}
+                    onChange={(newEstado) => toggleEstado(row.id, newEstado)}
+                  />
+                )
+              },
+              {
+                key: 'acciones',
+                header: 'Acciones',
+                render: (row) => (
+                  <ActionDropdown
+                    actions={[
+                      {
+                        label: 'Ver detalles',
+                        icon: 'fas fa-eye',
+                        onClick: () => handleActionClick('ver', row)
+                      },
+                      {
+                        label: 'Editar',
+                        icon: 'fas fa-edit',
+                        onClick: () => handleActionClick('editar', row)
+                      }
+                    ]}
+                  />
+                )
+              }
+            ]}
+            loading={loading}
+          />
         </div>
       </div>
 
       {/* Modales */}
-      {modalAbierto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            {modalAbierto === 'ver' && (
-              <ModalVerParticipante
-                participante={participanteSeleccionado}
-                onCerrar={cerrarModal}
-              />
-            )}
-            {modalAbierto === 'editar' && (
-              <ModalEditarParticipante
-                participante={participanteSeleccionado}
-                onCerrar={cerrarModal}
-                onActualizar={loadParticipantes}
-              />
-            )}
-            {modalAbierto === 'crear' && (
-              <ModalCrearParticipante
-                onCerrar={cerrarModal}
-                onCrear={loadParticipantes}
-              />
-            )}
-          </div>
-        </div>
-      )}
+      <ViewDetailsModal
+        isOpen={viewModal.isOpen}
+        onClose={viewModal.closeModal}
+        title="Detalles del Participante"
+        data={viewModal.modalData ? [
+          { label: 'Nombre Completo', value: viewModal.modalData.nombre },
+          { label: 'Edad', value: `${viewModal.modalData.edad} años` },
+          { label: 'Teléfono', value: viewModal.modalData.telefono },
+          { label: 'Sede', value: viewModal.modalData.sede },
+          { 
+            label: 'Estado', 
+            value: (
+              <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
+                viewModal.modalData.estado === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              }`}>
+                {viewModal.modalData.estado}
+              </span>
+            )
+          },
+          { 
+            label: 'Fecha de Ingreso', 
+            value: viewModal.modalData.fechaIngreso
+              ? new Date(viewModal.modalData.fechaIngreso).toLocaleDateString('es-ES')
+              : 'No disponible'
+          }
+        ] : []}
+      />
+
+      <ParticipanteEditModal
+        isOpen={editModal.isOpen}
+        onClose={editModal.closeModal}
+        participante={editModal.modalData}
+        onActualizar={loadParticipantes}
+      />
+
+      <ParticipanteCreateModal
+        isOpen={createModal.isOpen}
+        onClose={createModal.closeModal}
+        onCrear={loadParticipantes}
+      />
     </DashboardLayout>
   );
 });
 
-// Componente Modal para Ver Participante (memoized)
-const ModalVerParticipante = React.memo(({ participante, onCerrar }) => {
-  return (
-    <>
-      <div className="flex items-center justify-between p-6 border-b border-gray-200">
-        <h3 className="text-xl font-semibold text-gray-800">Detalles del Participante</h3>
-        <button 
-          onClick={onCerrar}
-          className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <i className="fas fa-times text-xl"></i>
-        </button>
-      </div>
-      
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Nombre Completo</label>
-              <p className="text-lg font-semibold text-gray-800">{participante.nombre}</p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Edad</label>
-              <p className="text-gray-800">{participante.edad} años</p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Teléfono</label>
-              <p className="text-gray-800">{participante.telefono}</p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Sede</label>
-              <p className="text-gray-800">{participante.sede}</p>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Estado</label>
-              <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                participante.estado === 'Activo' ? 'bg-green-100 text-green-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                {participante.estado}
-              </span>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Fecha de Ingreso</label>
-              <p className="text-gray-800">
-                {participante.fechaIngreso
-                  ? new Date(participante.fechaIngreso).toLocaleDateString('es-ES')
-                  : 'No disponible'
-                }
-              </p>
-            </div>
-            
-            
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex justify-end p-6 border-t border-gray-200 space-x-3">
-        <button 
-          onClick={onCerrar}
-          className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          Cerrar
-        </button>
-      </div>
-    </>
-  );
-});
+// Helper function for sede options by gender
+const getSedesPorGenero = (genero) => {
+  if (genero === 'MASCULINO') {
+    return [
+      { value: 'Sede Masculina Bello Principal', label: 'Bello Principal Masculina' },
+      { value: 'Sede Masculina Bello Campestre', label: 'Bello Campestre Masculina' },
+      { value: 'Sede Masculina Apartadó', label: 'Apartadó Masculina' },
+    ];
+  } else {
+    return [
+      { value: 'Sede Femenina Bello Principal', label: 'Bello Principal Femenina' },
+      { value: 'Sede Femenina Apartadó', label: 'Apartadó Femenina' },
+    ];
+  }
+};
 
-// Componente Modal para Editar Participante (memoized)
-const ModalEditarParticipante = React.memo(({ participante, onCerrar, onActualizar }) => {
-  const [formData, setFormData] = useState({
-    nombre: participante.nombre,
-    edad: participante.edad,
-    telefono: participante.telefono,
-    genero: participante.genero || 'MASCULINO', // Default if not provided
-    sede: participante.sede,
-    estado: participante.estado,
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+// Edit Modal Component
+const ParticipanteEditModal = ({ isOpen, onClose, participante, onActualizar }) => {
+  if (!participante) return null;
 
-  // Opciones de sedes por género
-  const getSedesPorGenero = (genero) => {
-    if (genero === 'MASCULINO') {
-      return [
-        { value: 'Sede Masculina Bello Principal', label: 'Bello Principal Masculina' },
-        { value: 'Sede Masculina Bello Campestre', label: 'Bello Campestre Masculina' },
-        { value: 'Sede Masculina Apartadó', label: 'Apartadó Masculina' },
-      ];
-    } else {
-      return [
-        { value: 'Sede Femenina Bello Principal', label: 'Bello Principal Femenina' },
-        { value: 'Sede Femenina Apartadó', label: 'Apartadó Femenina' },
-      ];
-    }
-  };
-
-  // Actualizar sede cuando cambia el género
-  const handleGeneroChange = (genero) => {
-    const sedesDisponibles = getSedesPorGenero(genero);
-    const nuevaSede = sedesDisponibles[0]?.value || '';
-    setFormData(prev => ({
-      ...prev,
-      genero,
-      sede: nuevaSede
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      console.log('🔄 Actualizando participante:', formData);
-
-      const result = await dbService.updateParticipante(participante.id, formData);
-
-      if (result.error) {
-        throw new Error(result.error.message || 'Error al actualizar participante');
-      }
-
-      console.log('✅ Participante actualizado exitosamente');
-      onActualizar(); // Recargar la lista
-      onCerrar();
-    } catch (err) {
-      console.error('❌ Error actualizando participante:', err);
-      setError(err.message || 'Error desconocido al actualizar participante');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <div className="flex items-center justify-between p-6 border-b border-gray-200">
-        <h3 className="text-xl font-semibold text-gray-800">Editar Participante</h3>
-        <button 
-          onClick={onCerrar}
-          className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <i className="fas fa-times text-xl"></i>
-        </button>
-      </div>
-      
-      <form onSubmit={handleSubmit} className="p-6">
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{error}</p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Completo</label>
-            <input
-              type="text"
-              value={formData.nombre}
-              onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Edad</label>
-            <input
-              type="number"
-              value={formData.edad}
-              onChange={(e) => setFormData({...formData, edad: parseInt(e.target.value)})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Género</label>
-            <select
-              value={formData.genero}
-              onChange={(e) => handleGeneroChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            >
-              <option value="MASCULINO">Masculino</option>
-              <option value="FEMENINO">Femenino</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
-            <input
-              type="tel"
-              value={formData.telefono}
-              onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sede</label>
-            <select
-              value={formData.sede}
-              onChange={(e) => setFormData({...formData, sede: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            >
-              {getSedesPorGenero(formData.genero).map(sede => (
-                <option key={sede.value} value={sede.value}>
-                  {sede.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-            <select
-              value={formData.estado}
-              onChange={(e) => setFormData({...formData, estado: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            >
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-            </select>
-          </div>
-
-        </div>
-        
-        <div className="flex justify-end mt-6 space-x-3">
-          <button
-            type="button"
-            onClick={onCerrar}
-            disabled={loading}
-            className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <i className="fas fa-spinner fa-spin mr-2"></i>
-                Guardando...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-save mr-2"></i>
-                Guardar Cambios
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </>
-  );
-});
-
-// Componente Modal para Crear Participante (memoized)
-const ModalCrearParticipante = React.memo(({ onCerrar, onCrear }) => {
-  const [formData, setFormData] = useState({
-    nombre: '',
-    edad: '',
-    telefono: '',
-    genero: 'MASCULINO',
-    sede: 'Sede Masculina Bello Principal',
-    estado: 'Activo',
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Opciones de sedes por género
-  const getSedesPorGenero = (genero) => {
-    if (genero === 'MASCULINO') {
-      return [
-        { value: 'Sede Masculina Bello Principal', label: 'Bello Principal Masculina' },
-        { value: 'Sede Masculina Bello Campestre', label: 'Bello Campestre Masculina' },
-        { value: 'Sede Masculina Apartadó', label: 'Apartadó Masculina' },
-      ];
-    } else {
-      return [
-        { value: 'Sede Femenina Bello Principal', label: 'Bello Principal Femenina' },
-        { value: 'Sede Femenina Apartadó', label: 'Apartadó Femenina' },
-      ];
-    }
-  };
-
-  // Actualizar sede cuando cambia el género
-  const handleGeneroChange = (genero) => {
-    const sedesDisponibles = getSedesPorGenero(genero);
-    const nuevaSede = sedesDisponibles[0]?.value || '';
-    setFormData(prev => ({
-      ...prev,
-      genero,
-      sede: nuevaSede
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  const handleSubmit = async (formData) => {
+    console.log('🔄 Actualizando participante:', formData);
+    const result = await dbService.updateParticipante(participante.id, formData);
     
-    try {
-      console.log('🔄 Creando participante:', formData);
-      
-      // Validaciones básicas
-      if (!formData.nombre.trim()) {
-        throw new Error('El nombre es requerido');
-      }
-      if (!formData.telefono.trim()) {
-        throw new Error('El teléfono es requerido');
-      }
-      
-      const result = await dbService.createParticipante(formData);
-      
-      if (result.error) {
-        throw new Error(result.error.message || 'Error al crear participante');
-      }
-      
-      console.log('✅ Participante creado exitosamente');
-      onCrear(); // Recargar la lista
-      onCerrar(); // Cerrar modal
-    } catch (err) {
-      console.error('❌ Error creando participante:', err);
-      setError(err.message || 'Error desconocido al crear participante');
-    } finally {
-      setLoading(false);
+    if (result.error) {
+      throw new Error(result.error.message || 'Error al actualizar participante');
     }
+    
+    console.log('✅ Participante actualizado exitosamente');
+    onActualizar();
   };
 
   return (
-    <>
-      <div className="flex items-center justify-between p-6 border-b border-gray-200">
-        <h3 className="text-xl font-semibold text-gray-800">Nuevo Participante</h3>
-        <button 
-          onClick={onCerrar}
-          className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <i className="fas fa-times text-xl"></i>
-        </button>
-      </div>
-      
-      <form onSubmit={handleSubmit} className="p-6">
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{error}</p>
-          </div>
-        )}
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Completo *</label>
-            <input
-              type="text"
-              value={formData.nombre}
-              onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ingrese el nombre completo"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Edad</label>
-            <input
-              type="number"
-              value={formData.edad}
-              onChange={(e) => setFormData({...formData, edad: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Edad"
-              min="1"
-              max="120"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Género *</label>
-            <select
-              value={formData.genero}
-              onChange={(e) => handleGeneroChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            >
-              <option value="MASCULINO">Masculino</option>
-              <option value="FEMENINO">Femenino</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono *</label>
-            <input
-              type="tel"
-              value={formData.telefono}
-              onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Número de teléfono"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sede</label>
-            <select
-              value={formData.sede}
-              onChange={(e) => setFormData({...formData, sede: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {getSedesPorGenero(formData.genero).map(sede => (
-                <option key={sede.value} value={sede.value}>
-                  {sede.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-            <select
-              value={formData.estado}
-              onChange={(e) => setFormData({...formData, estado: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="flex justify-end mt-6 space-x-3">
-          <button 
-            type="button"
-            onClick={onCerrar}
-            disabled={loading}
-            className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button 
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <i className="fas fa-spinner fa-spin mr-2"></i>
-                Creando...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-plus mr-2"></i>
-                Crear Participante
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </>
+    <EditFormModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Editar Participante"
+      initialData={{
+        nombre: participante.nombre,
+        edad: participante.edad,
+        telefono: participante.telefono,
+        genero: participante.genero || 'MASCULINO',
+        sede: participante.sede,
+        estado: participante.estado,
+      }}
+      onSubmit={handleSubmit}
+      submitLabel="Guardar Cambios"
+    >
+      {({ formData, handleChange, errors }) => (
+        <ParticipanteForm 
+          formData={formData} 
+          handleChange={handleChange} 
+          errors={errors}
+        />
+      )}
+    </EditFormModal>
   );
-});
+};
+
+// Create Modal Component
+const ParticipanteCreateModal = ({ isOpen, onClose, onCrear }) => {
+  const handleSubmit = async (formData) => {
+    console.log('🔄 Creando participante:', formData);
+    
+    if (!formData.nombre.trim()) {
+      throw new Error('El nombre es requerido');
+    }
+    if (!formData.telefono.trim()) {
+      throw new Error('El teléfono es requerido');
+    }
+    
+    const result = await dbService.createParticipante(formData);
+    
+    if (result.error) {
+      throw new Error(result.error.message || 'Error al crear participante');
+    }
+    
+    console.log('✅ Participante creado exitosamente');
+    onCrear();
+  };
+
+  return (
+    <CreateFormModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Nuevo Participante"
+      defaultValues={{
+        nombre: '',
+        edad: '',
+        telefono: '',
+        genero: 'MASCULINO',
+        sede: 'Sede Masculina Bello Principal',
+        estado: 'Activo',
+      }}
+      onSubmit={handleSubmit}
+      submitLabel="Crear Participante"
+    >
+      {({ formData, handleChange, errors }) => (
+        <ParticipanteForm 
+          formData={formData} 
+          handleChange={handleChange} 
+          errors={errors}
+        />
+      )}
+    </CreateFormModal>
+  );
+};
+
+// Shared Form Component using reusable Form components
+const ParticipanteForm = ({ formData, handleChange, errors }) => {
+  const handleGeneroChange = (genero) => {
+    const sedesDisponibles = getSedesPorGenero(genero);
+    const nuevaSede = sedesDisponibles[0]?.value || '';
+    handleChange('genero', genero);
+    handleChange('sede', nuevaSede);
+  };
+
+  return (
+    <FormGroup columns={2} gap="md">
+      <FormInput
+        label="Nombre Completo"
+        name="nombre"
+        type="text"
+        value={formData.nombre}
+        onChange={(value) => handleChange('nombre', value)}
+        error={errors?.nombre}
+        required
+        placeholder="Ingrese el nombre completo"
+      />
+
+      <FormInput
+        label="Edad"
+        name="edad"
+        type="number"
+        value={formData.edad}
+        onChange={(value) => handleChange('edad', value)}
+        error={errors?.edad}
+        placeholder="Edad"
+      />
+
+      <FormSelect
+        label="Género"
+        name="genero"
+        value={formData.genero}
+        onChange={(value) => handleGeneroChange(value)}
+        options={[
+          { value: 'MASCULINO', label: 'Masculino' },
+          { value: 'FEMENINO', label: 'Femenino' }
+        ]}
+        error={errors?.genero}
+        required
+      />
+
+      <FormInput
+        label="Teléfono"
+        name="telefono"
+        type="tel"
+        value={formData.telefono}
+        onChange={(value) => handleChange('telefono', value)}
+        error={errors?.telefono}
+        required
+        placeholder="Número de teléfono"
+      />
+
+      <FormSelect
+        label="Sede"
+        name="sede"
+        value={formData.sede}
+        onChange={(value) => handleChange('sede', value)}
+        options={getSedesPorGenero(formData.genero).map(sede => ({
+          value: sede.value,
+          label: sede.label
+        }))}
+        error={errors?.sede}
+      />
+
+      <FormSelect
+        label="Estado"
+        name="estado"
+        value={formData.estado}
+        onChange={(value) => handleChange('estado', value)}
+        options={[
+          { value: 'Activo', label: 'Activo' },
+          { value: 'Inactivo', label: 'Inactivo' }
+        ]}
+        error={errors?.estado}
+      />
+    </FormGroup>
+  );
+};
 
 export default Participantes;

@@ -1,7 +1,7 @@
 import React, { useMemo, Suspense } from "react";
 import { BrowserRouter as Router, Route, Switch, useLocation } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
-import AuthProvider from "contexts/AuthContext";
+import AuthProvider from "shared/contexts/AuthContext";
 import Footer from "components/layout/Footer";
 import Header from "components/layout/Header";
 import PrivateRoute from "features/auth/ProtectedRoute";
@@ -12,7 +12,7 @@ import Login from "pages/Login/Login";
 import NotFound from "pages/NotFound/NotFound";
 import Programs from "pages/Programs/Programs";
 import Donate from "pages/Donate/Donate";
-import { PerformanceDebugOverlay, LoadingSpinner } from "components/UI";
+import { PerformanceDebugOverlay, LoadingSpinner } from "components/ui";
 
 // Lazy load dashboard components for better performance
 const Dashboard = React.lazy(() => import("pages/Dashboard/Dashboard"));

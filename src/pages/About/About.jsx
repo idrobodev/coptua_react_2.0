@@ -7,7 +7,7 @@ import mission from "assets/images/booking.jpg";
 import story from "assets/images/banner.png";
 import belloImage from "assets/images/review/1.jpg";
 import apartadoImage from "assets/images/sedes/apartado.jpeg";
-import GradientText from "components/UI/GradientText";
+import { GradientText } from "components/ui";
 
 // Icons for locations
 import { FaMapMarkerAlt, FaPhone } from "react-icons/fa";

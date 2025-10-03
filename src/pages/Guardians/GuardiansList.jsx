@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import DataTable from '../../components/UI/DataTable';
-import { dbService } from '../../services/database';
+import DashboardLayout from 'components/layout/DashboardLayout';
+import { DataTable } from 'components/ui';
+import { dbService } from 'shared/services';
 
 const GuardiansList = () => {
   const [guardians, setGuardians] = useState([]);
