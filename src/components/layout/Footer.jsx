@@ -1,8 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import logo from "assets/images/logo.png";
-import VisitorCounter from "features/landing/VisitorCounter";
-import VisitorCounterMobile from "features/landing/VisitorCounterMobile";
 
 const Footer = () => {
   return (
@@ -120,7 +118,7 @@ const Footer = () => {
           <div className="space-y-3">
             <div className="flex items-center">
               <i className="fas fa-hand-holding-heart mr-2"></i>
-              <span>Donaciones en especie y efectivo</span>
+              <Link to="/donate" className="hover:text-blue-200 transition">Donaciones en especie y efectivo</Link>
             </div>
             <div className="flex items-center">
               <i className="fas fa-hands-helping mr-2"></i>
@@ -132,57 +130,9 @@ const Footer = () => {
             </div>
           </div>
           
-          <div className="py-4 flex mt-4">
-            <input
-              type="email"
-              className="border px-4 border-white border-r-0 bg-transparent placeholder-white placeholder-opacity-70 py-3 pr-3 rounded-l-md focus:outline-none text-white w-full font-Poppins"
-              placeholder="Su correo electrónico"
-            />
-            <button className="bg-white text-[#21188e] px-4 rounded-r-md hover:bg-blue-50 transition font-Poppins font-medium">
-              <i className="fas fa-arrow-right"></i>
-            </button>
-          </div>
         </div>
       </div>
       
-      {/* Visitor Counter Section */}
-      <div className="border-t border-white border-opacity-30 mt-8 pt-6 relative z-10">
-        <div className="container">
-          <div className="flex flex-col lg:flex-row items-center justify-between space-y-4 lg:space-y-0">
-            {/* Visitor Counter */}
-            <div className="flex justify-center lg:justify-start">
-              <div className="hidden lg:block">
-                <VisitorCounter />
-              </div>
-              <div className="block lg:hidden">
-                <VisitorCounterMobile />
-              </div>
-            </div>
-            
-            {/* Copyright Info */}
-            <div className="text-center text-sm text-white text-opacity-80 font-Poppins">
-              <p>© {new Date().getFullYear()} Corporación Todo por un Alma.</p>
-              <p className="mt-1">Transformando vidas desde el amor y la evidencia científica</p>
-            </div>
-            
-            {/* Additional Stats */}
-            <div className="flex space-x-6 text-center">
-              <div className="text-white text-opacity-80">
-                <div className="text-lg font-bold font-Lato text-white">2020</div>
-                <div className="text-xs font-Poppins uppercase tracking-wide">Fundación</div>
-              </div>
-              <div className="text-white text-opacity-80">
-                <div className="text-lg font-bold font-Lato text-white">2</div>
-                <div className="text-xs font-Poppins uppercase tracking-wide">Sedes</div>
-              </div>
-              <div className="text-white text-opacity-80">
-                <div className="text-lg font-bold font-Lato text-white">24/7</div>
-                <div className="text-xs font-Poppins uppercase tracking-wide">Atención</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

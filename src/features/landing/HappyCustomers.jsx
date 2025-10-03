@@ -61,13 +61,13 @@ const HappyCustomers = () => {
         }}
       >
         {/* Overlay con gradiente del footer y opacidad negra para contraste */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#21188e]/70 via-[#5b2076]/70 to-[#ea3238]/70"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#21188e]/50 via-[#5b2076]/50 to-[#ea3238]/50"></div>
         <div className="absolute inset-0 bg-black/30"></div>
         
         <div className="container relative py-20 text-center">
           <div className="max-w-5xl mx-auto">
             <h1 className="text-5xl md:text-6xl py-6 font-Lato font-bold text-white drop-shadow-2xl tracking-tight">
-              Nuestro <span className="text-white font-extrabold">Impacto</span> 2025
+              Nuestro <span className="text-white font-extrabold">Impacto</span> {new Date().getFullYear()}
             </h1>
             <p className="text-xl md:text-2xl text-white mb-16 font-Poppins font-light max-w-3xl mx-auto leading-relaxed">
               Transformando vidas desde el amor y la evidencia científica

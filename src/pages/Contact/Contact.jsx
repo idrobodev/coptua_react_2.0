@@ -5,15 +5,6 @@ import SEO from "features/landing/SEO";
 import GradientText from "components/UI/GradientText";
 
 const Contact = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    subject: "",
-    message: "",
-    urgency: "normal",
-  });
-
   const [isVisible, setIsVisible] = useState({});
 
   useEffect(() => {
@@ -33,34 +24,6 @@ const Contact = () => {
 
     return () => observer.disconnect();
   }, []);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      // Simular envío de formulario (integrar con API de contacto)
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      alert("Mensaje enviado con éxito!");
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        subject: "",
-        message: "",
-        urgency: "normal",
-      });
-    } catch (error) {
-      console.error("Error al enviar mensaje:", error);
-      alert(
-        "Hubo un error al enviar el mensaje. Por favor intente nuevamente.",
-      );
-    }
-  };
 
   const socialNetworks = [
     {
@@ -252,128 +215,7 @@ const Contact = () => {
         }`}
       >
         <div className="container">
-          <div className="grid lg:grid-cols-2 gap-16 items-start">
-            {/* Formulario */}
-            <div className="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100">
-              <h2 className="text-3xl font-bold mb-8">
-                <GradientText>Envíanos un Mensaje</GradientText>
-              </h2>
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Nombre Completo *
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 hover:border-primary/50"
-                      placeholder="Tu nombre completo"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Teléfono
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 hover:border-primary/50"
-                      placeholder="Tu número de teléfono"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 hover:border-primary/50"
-                    placeholder="tu@email.com"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Asunto
-                  </label>
-                  <select
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 hover:border-primary/50"
-                  >
-                    <option value="">Selecciona un asunto</option>
-                    <option value="informacion">Información General</option>
-                    <option value="admision">Proceso de Admisión</option>
-                    <option value="emergencia">Situación de Emergencia</option>
-                    <option value="familia">Apoyo Familiar</option>
-                    <option value="otros">Otros</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Nivel de Urgencia
-                  </label>
-                  <div className="flex space-x-4">
-                    {["normal", "urgente", "emergencia"].map((level) => (
-                      <label
-                        key={level}
-                        className="flex items-center cursor-pointer"
-                      >
-                        <input
-                          type="radio"
-                          name="urgency"
-                          value={level}
-                          checked={formData.urgency === level}
-                          onChange={handleInputChange}
-                          className="mr-2 text-primary focus:ring-primary"
-                        />
-                        <span className="capitalize text-gray-700">
-                          {level}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Mensaje *
-                  </label>
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    rows="5"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 hover:border-primary/50 resize-none"
-                    placeholder="Cuéntanos cómo podemos ayudarte..."
-                    required
-                  ></textarea>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-primary to-secondary text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-[#434194] hover:to-primary transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
-                >
-                  Enviar Mensaje
-                </button>
-              </form>
-            </div>
-
+          <div className="max-w-4xl mx-auto">
             {/* Información de Contacto */}
             <div className="space-y-8">
               <div className="text-center lg:text-left">
@@ -432,12 +274,12 @@ const Contact = () => {
               <GradientText>Nuestras Ubicaciones</GradientText>
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Visítanos en cualquiera de nuestras sedes en Bello y Apartadó
+              Visítanos en cualquiera de nuestras sedes
             </p>
             <div className="w-24 h-1 bg-gradient-to-r from-primary to-secondary mx-auto rounded-full mt-6"></div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Mapa de Bello */}
             <div className="bg-white rounded-2xl overflow-hidden shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2">
               <div className="h-64 relative">
@@ -486,6 +328,32 @@ const Contact = () => {
                 <div className="flex flex-wrap gap-2">
                   <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Atención 24/7</span>
                   <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Zona de espera</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Mapa de Medellín */}
+            <div className="bg-white rounded-2xl overflow-hidden shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2">
+              <div className="h-64 relative">
+                <iframe
+                  className="w-full h-full"
+                  frameBorder="0"
+                  style={{ border: 0 }}
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.521260322283!2d-75.55773348523147!3d6.326506295411078!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e442f1c8f8f8f8f%3A0x8f8f8f8f8f8f8f8f!2sMedell%C3%ADn%2C%20Antioquia%2C%20Colombia!5e0!3m2!1ses!2sco!4v1633349781164!5m2!1ses!2sco"
+                  allowFullScreen=""
+                  loading="lazy"
+                  title="Ubicación Medellín"
+                ></iframe>
+                <div className="absolute bottom-4 left-4 bg-white px-4 py-2 rounded-lg shadow-md">
+                  <span className="text-primary font-semibold">Sede Medellín</span>
+                </div>
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Sede Medellín</h3>
+                <p className="text-gray-600 mb-4">Carrera 70 # 45-12, Medellín, Antioquia</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Atención 24/7</span>
+                  <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Centro urbano</span>
                 </div>
               </div>
             </div>

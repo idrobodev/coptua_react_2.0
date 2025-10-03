@@ -226,12 +226,12 @@ const About = () => {
               <GradientText>Nuestras Sedes</GradientText>
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Conoce nuestras sedes en Bello y Apartadó, diseñadas para brindar el mejor ambiente para la recuperación
+              Conoce nuestras sedes, diseñadas para brindar el mejor ambiente para la recuperación
             </p>
             <div className="w-24 h-1 bg-gradient-to-r from-primary to-secondary mx-auto rounded-full mt-6"></div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Sede Bello */}
             <div className="group relative overflow-hidden rounded-3xl shadow-xl border border-gray-100 bg-white">
               <img
@@ -279,6 +279,32 @@ const About = () => {
                   </div>
                   <p className="text-sm font-medium text-gray-700">
                     Dr. Carlos Rojas - Director Sede
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sede Medellín */}
+            <div className="group relative overflow-hidden rounded-3xl shadow-xl border border-gray-100 bg-white">
+              <img
+                src={belloImage}
+                alt="Sede de Medellín"
+                className="w-full h-72 object-cover transform group-hover:scale-105 transition duration-700"
+              />
+              <div className="p-6">
+                <div className="flex items-center mb-2 text-gray-800">
+                  <FaMapMarkerAlt className="mr-2 text-primary" />
+                  <span className="text-sm font-medium">Medellín, Antioquia</span>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Sede Medellín</h3>
+                <p className="text-gray-600 mb-4">Carrera 70 # 45 - 12</p>
+                <div className="space-y-3 mt-4">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <FaPhone className="mr-2 text-primary" />
+                    <span>+57 310 457 7836</span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">
+                    Dra. Ana María López - Directora Médica
                   </p>
                 </div>
               </div>
