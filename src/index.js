@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "app/App";
-import "index.css";
+import "./index.css";
 import reportWebVitals from "reportWebVitals";
 
 // Polyfill for process.env in browser

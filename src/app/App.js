@@ -12,7 +12,7 @@ import Login from "pages/Login/Login";
 import NotFound from "pages/NotFound/NotFound";
 import Programs from "pages/Programs/Programs";
 import Donate from "pages/Donate/Donate";
-import { PerformanceDebugOverlay, LoadingSpinner } from "components/ui";
+import { PerformanceDebugOverlay, LoadingSpinner } from "components/UI";
 
 // Lazy load dashboard components for better performance
 const Dashboard = React.lazy(() => import("pages/Dashboard/Dashboard"));

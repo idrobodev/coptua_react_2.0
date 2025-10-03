@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import DashboardLayout from "components/layout/DashboardLayout";
 import { dbService } from "shared/services";
-import { StatsGrid, ActionCard, LoadingState } from "components/ui";
+import { StatsGrid, ActionCard, LoadingState } from "components/UI";
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);

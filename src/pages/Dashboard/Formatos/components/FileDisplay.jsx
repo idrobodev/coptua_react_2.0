@@ -1,5 +1,5 @@
 import React from 'react';
-import { LoadingSpinner } from 'components/ui';
+import { LoadingSpinner } from 'components/UI';
 import FileGridView from './FileGridView';
 import FileListView from './FileListView';
 

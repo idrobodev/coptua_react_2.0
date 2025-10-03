@@ -2,7 +2,7 @@ import React from "react";
 import { SidebarProvider, useSidebarContext } from "shared/contexts";
 import Sidebar from "./Sidebar";
 import DashboardHeader from "./DashboardHeader";
-import LoadingSpinner from "../ui/LoadingSpinner";
+import LoadingSpinner from "../UI/LoadingSpinner";
 
 /**
  * DashboardLayout - Componente de layout reutilizable para todas las páginas del dashboard

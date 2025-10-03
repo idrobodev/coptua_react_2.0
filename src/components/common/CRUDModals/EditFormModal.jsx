@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import FormModal from '../../ui/Modal/FormModal';
+import FormModal from '../../UI/Modal/FormModal';
 
 /**
  * EditFormModal component - Composite modal for editing entities

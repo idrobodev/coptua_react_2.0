@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Breadcrumbs from "features/dashboard/Breadcrumbs";
 import SEO from "features/landing/SEO";
 
-import { GradientText } from "components/ui";
+import { GradientText } from "components/UI";
 
 const Contact = () => {
   const [isVisible, setIsVisible] = useState({});

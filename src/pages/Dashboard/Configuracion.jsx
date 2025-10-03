@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "shared/contexts";
 import { api } from "shared/services";
 import DashboardLayout from "components/layout/DashboardLayout";
-import { Button, FormInput, FormGroup } from "components/ui";
+import { Button, FormInput, FormGroup } from "components/UI";
 
 const Configuracion = () => {
   const { currentUser } = useAuth();

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "components/layout/DashboardLayout";
 import { dbService } from "shared/services";
-import { FilterBar } from "components/ui/Filter";
-import { StatsGrid } from "components/ui/Card";
-import { StatusToggle } from "components/ui/Badge";
-import { ActionDropdown } from "components/ui/Table";
+import { FilterBar } from "components/UI/Filter";
+import { StatsGrid } from "components/UI/Card";
+import { StatusToggle } from "components/UI/Badge";
+import { ActionDropdown } from "components/UI/Table";
 import { ViewDetailsModal, EditFormModal, CreateFormModal } from "components/common/CRUDModals";
 import { useFilters, useModal } from "shared/hooks";
 

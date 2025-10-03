@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../../components/layout/Sidebar';
-import { DataTable, LoadingSpinner } from 'components/ui';
+import { DataTable, LoadingSpinner } from 'components/UI';
 import { dbService } from 'shared/services';
 
 const ParticipantsList = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from 'components/layout/DashboardLayout';
-import { DataTable } from 'components/ui';
+import { DataTable } from 'components/UI';
 import { dbService } from 'shared/services';
 
 const GuardiansList = () => {

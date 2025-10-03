@@ -12,7 +12,7 @@ import {
   FormModal,
   FormInput,
   FormSelect
-} from "components/ui";
+} from "components/UI";
 
 const Finance = React.memo(() => {
   const [mensualidades, setMensualidades] = useState([]);

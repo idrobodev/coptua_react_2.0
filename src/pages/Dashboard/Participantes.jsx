@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import DashboardLayout from "components/layout/DashboardLayout";
 import { dbService } from "shared/services";
-import { FilterBar, StatsGrid, DataTable, ActionDropdown, StatusToggle, FormInput, FormSelect, FormGroup } from "components/ui";
+import { FilterBar, StatsGrid, DataTable, ActionDropdown, StatusToggle, FormInput, FormSelect, FormGroup } from "components/UI";
 import { ViewDetailsModal, EditFormModal, CreateFormModal } from "components/common";
 import { useFilters, useModal } from "shared/hooks";
 // import jsPDF from 'jspdf'; // Temporarily disabled - not available in Docker dev

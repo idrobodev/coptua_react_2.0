@@ -1,5 +1,5 @@
 import React from 'react';
-import { LoadingSpinner } from 'components/ui';
+import { LoadingSpinner } from 'components/UI';
 
 const FileUploadZone = ({ isAdmin, getRootProps, getInputProps, isDragActive, uploading }) => {
   return (

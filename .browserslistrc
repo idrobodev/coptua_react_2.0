@@ -1,0 +1,36 @@
+# Browserslist Configuration
+# 
+# This file defines which browsers your application supports.
+# It's used by various tools including:
+# - Babel: To determine which JavaScript features need to be transpiled
+# - Autoprefixer: To determine which CSS vendor prefixes are needed
+# - PostCSS: For CSS transformations
+#
+# Learn more: https://github.com/browserslist/browserslist
+
+# ============================================
+# PRODUCTION BUILDS
+# ============================================
+# These browsers are targeted when building for production
+# - >0.2%: Browsers with more than 0.2% global usage
+# - not dead: Exclude browsers without official support or updates for 24 months
+# - not op_mini all: Exclude Opera Mini (limited CSS/JS support)
+
+[production]
+>0.2%
+not dead
+not op_mini all
+
+# ============================================
+# DEVELOPMENT BUILDS
+# ============================================
+# These browsers are targeted during development
+# Using latest versions for faster builds and modern features
+# - last 1 chrome version: Latest Chrome (most developers use this)
+# - last 1 firefox version: Latest Firefox
+# - last 1 safari version: Latest Safari
+
+[development]
+last 1 chrome version
+last 1 firefox version
+last 1 safari version
