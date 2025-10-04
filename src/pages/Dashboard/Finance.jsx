@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import DashboardLayout from "../../components/layout/DashboardLayout";
+import DashboardLayout from "components/layout/DashboardLayout";
 import { dbService } from "shared/services";
 import { useFilters, usePagination, useModal } from "shared/hooks";
 import { 
@@ -11,22 +11,39 @@ import {
   ActionDropdown,
   FormModal,
   FormInput,
-  FormSelect
+  FormSelect,
+  FormTextarea
 } from "components/UI";
+import { validateMensualidadRelations } from "shared/utils/validationUtils";
 
 const Finance = React.memo(() => {
   const [mensualidades, setMensualidades] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [sedes, setSedes] = useState([]);
+  const [acudientes, setAcudientes] = useState([]);
+  const [filteredAcudientes, setFilteredAcudientes] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({ participant_id: '', mes: '', año: new Date().getFullYear(), valor: '', status: 'PAGADO' });
+  const [formData, setFormData] = useState({ 
+    participant_id: '', 
+    id_acudiente: '',
+    mes: '', 
+    año: new Date().getFullYear(), 
+    valor: '', 
+    status: 'PAGADA',
+    metodo_pago: 'TRANSFERENCIA',
+    fecha_pago: '',
+    observaciones: ''
+  });
   
   // Use custom hooks
   const { filters, setFilter, clearFilters } = useFilters({ 
     mes: 'all', 
     sede: 'all', 
     año: 'all',
+    estado: 'all',
+    acudiente: 'all',
+    metodo_pago: 'all',
     busqueda: '' 
   });
   const { isOpen: showModal, open: openModalHook, close: closeModal, data: modalData, setData: setModalData } = useModal();
@@ -67,27 +84,32 @@ const Finance = React.memo(() => {
         setError(null);
         console.log('🔄 Cargando datos financieros...');
         
-        const [mensRes, partsRes, sedesRes] = await Promise.all([
+        const [mensRes, partsRes, sedesRes, acudRes] = await Promise.all([
           dbService.getMensualidades(),
           dbService.getParticipantes(),
-          dbService.getSedes()
+          dbService.getSedes(),
+          dbService.getAcudientes()
         ]);
         
-        console.log('📊 Resultados:', { mensRes, partsRes, sedesRes });
+        console.log('📊 Resultados:', { mensRes, partsRes, sedesRes, acudRes });
         
         // Asegurar que siempre sean arrays
         const mensualidadesData = Array.isArray(mensRes.data) ? mensRes.data : [];
         const participantesData = Array.isArray(partsRes.data) ? partsRes.data : [];
         const sedesData = Array.isArray(sedesRes.data) ? sedesRes.data : [];
+        const acudientesData = Array.isArray(acudRes.data) ? acudRes.data : [];
         
         setMensualidades(mensualidadesData);
         setParticipants(participantesData);
         setSedes(sedesData);
+        setAcudientes(acudientesData);
+        setFilteredAcudientes(acudientesData);
         
         console.log('✅ Datos cargados:', {
           mensualidades: mensualidadesData.length,
           participantes: participantesData.length,
-          sedes: sedesData.length
+          sedes: sedesData.length,
+          acudientes: acudientesData.length
         });
       } catch (err) {
         console.error('❌ Error cargando datos financieros:', err);
@@ -96,6 +118,7 @@ const Finance = React.memo(() => {
         setMensualidades([]);
         setParticipants([]);
         setSedes([]);
+        setAcudientes([]);
       } finally {
         setLoading(false);
       }
@@ -103,6 +126,20 @@ const Finance = React.memo(() => {
 
     loadData();
   }, []);
+
+  // Filter acudientes when participant changes in form
+  useEffect(() => {
+    if (formData.participant_id) {
+      const filtered = acudientes.filter(a => a.id_participante === parseInt(formData.participant_id));
+      setFilteredAcudientes(filtered);
+      // Reset acudiente selection if current selection is not valid for new participant
+      if (formData.id_acudiente && !filtered.find(a => a.id_acudiente === parseInt(formData.id_acudiente))) {
+        setFormData(prev => ({ ...prev, id_acudiente: '' }));
+      }
+    } else {
+      setFilteredAcudientes(acudientes);
+    }
+  }, [formData.participant_id, acudientes, formData.id_acudiente]);
 
   const filteredMensualidades = useMemo(() => {
     // Asegurar que mensualidades siempre sea un array
@@ -118,9 +155,19 @@ const Finance = React.memo(() => {
     if (filters.año !== 'all') {
       filtered = filtered.filter(m => m.año === parseInt(filters.año));
     }
+    if (filters.estado !== 'all') {
+      filtered = filtered.filter(m => m.estado === filters.estado);
+    }
+    if (filters.acudiente !== 'all') {
+      filtered = filtered.filter(m => m.id_acudiente === parseInt(filters.acudiente));
+    }
+    if (filters.metodo_pago !== 'all') {
+      filtered = filtered.filter(m => m.metodo_pago === filters.metodo_pago);
+    }
     if (filters.busqueda) {
       filtered = filtered.filter(m =>
         (m.participant_name || '').toLowerCase().includes(filters.busqueda.toLowerCase()) ||
+        (m.acudiente_name || '').toLowerCase().includes(filters.busqueda.toLowerCase()) ||
         getMonthLabel(m.mes).toLowerCase().includes(filters.busqueda.toLowerCase())
       );
     }
@@ -139,15 +186,29 @@ const Finance = React.memo(() => {
     if (mensualidad) {
       // Pre-fill form with existing data
       setFormData({
-        participant_id: mensualidad.participante_id,
+        participant_id: mensualidad.participante_id || mensualidad.participant_id,
+        id_acudiente: mensualidad.id_acudiente || '',
         mes: mensualidad.mes,
         año: mensualidad.año,
-        valor: mensualidad.valor,
-        status: mensualidad.estado // Use original estado
+        valor: mensualidad.valor || mensualidad.monto,
+        status: mensualidad.estado || mensualidad.status,
+        metodo_pago: mensualidad.metodo_pago || 'TRANSFERENCIA',
+        fecha_pago: mensualidad.fecha_pago || '',
+        observaciones: mensualidad.observaciones || ''
       });
       setModalData(mensualidad);
     } else {
-      setFormData({ participant_id: '', mes: '', año: new Date().getFullYear(), valor: '', status: 'PAGADO' });
+      setFormData({ 
+        participant_id: '', 
+        id_acudiente: '',
+        mes: '', 
+        año: new Date().getFullYear(), 
+        valor: '', 
+        status: 'PAGADA',
+        metodo_pago: 'TRANSFERENCIA',
+        fecha_pago: '',
+        observaciones: ''
+      });
       setModalData(null);
     }
     openModalHook();
@@ -167,13 +228,44 @@ const Finance = React.memo(() => {
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
+    
+    // Validate fecha_pago is required when status is PAGADA
+    if (formData.status === 'PAGADA' && !formData.fecha_pago) {
+      alert('La fecha de pago es requerida cuando el estado es PAGADA');
+      return;
+    }
+    
+    // Validate that participante and acudiente exist (if acudiente is provided)
+    try {
+      if (formData.id_acudiente) {
+        const relationsValidation = await validateMensualidadRelations(
+          parseInt(formData.participant_id),
+          parseInt(formData.id_acudiente)
+        );
+        
+        if (!relationsValidation.isValid) {
+          alert(relationsValidation.error);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Error validating relations:', err);
+      alert('Error al validar las relaciones: ' + (err.message || 'Error desconocido'));
+      return;
+    }
+    
     const submitData = {
       participant_id: parseInt(formData.participant_id),
+      id_acudiente: formData.id_acudiente ? parseInt(formData.id_acudiente) : null,
       mes: parseInt(formData.mes),
       año: parseInt(formData.año),
-      valor: parseInt(formData.valor),
-      status: formData.status
+      monto: parseFloat(formData.valor),
+      estado: formData.status,
+      metodo_pago: formData.metodo_pago,
+      fecha_pago: formData.status === 'PAGADA' ? formData.fecha_pago : null,
+      observaciones: formData.observaciones || null
     };
+    
     try {
       if (modalData?.id) {
         await dbService.updateMensualidad(modalData.id, submitData);
@@ -185,6 +277,7 @@ const Finance = React.memo(() => {
       setMensualidades(data);
     } catch (err) {
       console.error('Error saving payment:', err);
+      alert('Error al guardar la mensualidad: ' + (err.message || 'Error desconocido'));
     }
   }, [formData, modalData, closeModal]);
 
@@ -260,6 +353,41 @@ const Finance = React.memo(() => {
                   ]
                 },
                 {
+                  type: 'select',
+                  name: 'estado',
+                  label: 'Estado',
+                  placeholder: 'Todos',
+                  options: [
+                    { value: 'all', label: 'Todos' },
+                    { value: 'PAGADA', label: 'Pagada' },
+                    { value: 'PENDIENTE', label: 'Pendiente' }
+                  ]
+                },
+                {
+                  type: 'select',
+                  name: 'acudiente',
+                  label: 'Acudiente',
+                  placeholder: 'Todos',
+                  options: [
+                    { value: 'all', label: 'Todos' },
+                    ...acudientes.map(a => ({ 
+                      value: a.id_acudiente?.toString() || a.id?.toString(), 
+                      label: `${a.nombres} ${a.apellidos}` 
+                    }))
+                  ]
+                },
+                {
+                  type: 'select',
+                  name: 'metodo_pago',
+                  label: 'Método de Pago',
+                  placeholder: 'Todos',
+                  options: [
+                    { value: 'all', label: 'Todos' },
+                    { value: 'TRANSFERENCIA', label: 'Transferencia' },
+                    { value: 'EFECTIVO', label: 'Efectivo' }
+                  ]
+                },
+                {
                   type: 'search',
                   name: 'busqueda',
                   label: 'Búsqueda',
@@ -283,6 +411,13 @@ const Finance = React.memo(() => {
                     )
                   },
                   {
+                    key: 'acudiente_name',
+                    header: 'Acudiente',
+                    render: (row) => (
+                      <span className="text-gray-700">{row.acudiente_name || 'N/A'}</span>
+                    )
+                  },
+                  {
                     key: 'mes',
                     header: 'Mes',
                     render: (row) => getMonthLabel(row.mes)
@@ -290,16 +425,26 @@ const Finance = React.memo(() => {
                   {
                     key: 'valor',
                     header: 'Cantidad',
-                    render: (row) => `$${row.valor?.toLocaleString() || '0'}`
+                    render: (row) => `$${(row.valor || row.monto || 0).toLocaleString()}`
+                  },
+                  {
+                    key: 'metodo_pago',
+                    header: 'Método de Pago',
+                    render: (row) => (
+                      <span className="text-sm text-gray-600">
+                        {row.metodo_pago === 'TRANSFERENCIA' ? 'Transferencia' : 
+                         row.metodo_pago === 'EFECTIVO' ? 'Efectivo' : 'N/A'}
+                      </span>
+                    )
                   },
                   {
                     key: 'status',
                     header: 'Estado',
                     render: (row) => (
                       <StatusToggle
-                        currentStatus={row.status}
+                        currentStatus={row.status || row.estado}
                         statuses={[
-                          { value: 'PAGADO', label: 'PAGADO', variant: 'success' },
+                          { value: 'PAGADA', label: 'PAGADA', variant: 'success' },
                           { value: 'PENDIENTE', label: 'PENDIENTE', variant: 'danger' }
                         ]}
                         onChange={(newStatus) => toggleStatus(row.id, newStatus)}
@@ -307,9 +452,17 @@ const Finance = React.memo(() => {
                     )
                   },
                   {
-                    key: 'fecha_vencimiento',
-                    header: 'Fecha',
-                    render: (row) => new Date(row.fecha_vencimiento).toLocaleDateString()
+                    key: 'observaciones',
+                    header: 'Observaciones',
+                    render: (row) => (
+                      <span className="text-sm text-gray-600 truncate max-w-xs block" title={row.observaciones || ''}>
+                        {row.observaciones ? 
+                          (row.observaciones.length > 30 ? 
+                            row.observaciones.substring(0, 30) + '...' : 
+                            row.observaciones) : 
+                          '-'}
+                      </span>
+                    )
                   },
                   {
                     key: 'actions',
@@ -317,6 +470,11 @@ const Finance = React.memo(() => {
                     render: (row) => (
                       <ActionDropdown
                         actions={[
+                          {
+                            label: 'Ver',
+                            icon: 'fas fa-eye',
+                            onClick: () => openModal(row)
+                          },
                           {
                             label: 'Editar',
                             icon: 'fas fa-edit',
@@ -353,10 +511,10 @@ const Finance = React.memo(() => {
           <FormModal
             isOpen={showModal}
             onClose={closeModal}
-            title={modalData ? 'Editar Mensualidad' : 'Nueva Mensualidad'}
+            title={modalData ? 'Ver/Editar Mensualidad' : 'Nueva Mensualidad'}
             onSubmit={handleSubmit}
             submitLabel="Guardar"
-            size="md"
+            size="lg"
           >
             <div className="space-y-4">
               <FormSelect
@@ -373,29 +531,44 @@ const Finance = React.memo(() => {
               />
               
               <FormSelect
-                label="Mes"
-                name="mes"
-                value={formData.mes}
-                onChange={(value) => handleFormDataChange('mes', value)}
-                options={months.map(m => ({
-                  value: m.value,
-                  label: m.label
+                label="Acudiente"
+                name="id_acudiente"
+                value={formData.id_acudiente}
+                onChange={(value) => handleFormDataChange('id_acudiente', value)}
+                options={filteredAcudientes.map(a => ({
+                  value: a.id_acudiente || a.id,
+                  label: `${a.nombres} ${a.apellidos} - ${a.parentesco}`
                 }))}
-                placeholder="Seleccionar Mes"
-                required
+                placeholder="Seleccionar Acudiente"
+                disabled={!formData.participant_id}
               />
               
-              <FormSelect
-                label="Año"
-                name="año"
-                value={formData.año}
-                onChange={(value) => handleFormDataChange('año', value)}
-                options={years.map(y => ({
-                  value: y,
-                  label: y.toString()
-                }))}
-                required
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormSelect
+                  label="Mes"
+                  name="mes"
+                  value={formData.mes}
+                  onChange={(value) => handleFormDataChange('mes', value)}
+                  options={months.map(m => ({
+                    value: m.value,
+                    label: m.label
+                  }))}
+                  placeholder="Seleccionar Mes"
+                  required
+                />
+                
+                <FormSelect
+                  label="Año"
+                  name="año"
+                  value={formData.año}
+                  onChange={(value) => handleFormDataChange('año', value)}
+                  options={years.map(y => ({
+                    value: y,
+                    label: y.toString()
+                  }))}
+                  required
+                />
+              </div>
               
               <FormInput
                 label="Valor"
@@ -407,17 +580,86 @@ const Finance = React.memo(() => {
                 required
               />
               
-              <FormSelect
-                label="Estado"
-                name="status"
-                value={formData.status}
-                onChange={(value) => handleFormDataChange('status', value)}
-                options={[
-                  { value: 'PAGADO', label: 'Pagado' },
-                  { value: 'PENDIENTE', label: 'Pendiente' }
-                ]}
-                required
+              <div className="grid grid-cols-2 gap-4">
+                <FormSelect
+                  label="Estado"
+                  name="status"
+                  value={formData.status}
+                  onChange={(value) => handleFormDataChange('status', value)}
+                  options={[
+                    { value: 'PAGADA', label: 'Pagada' },
+                    { value: 'PENDIENTE', label: 'Pendiente' }
+                  ]}
+                  required
+                />
+                
+                <FormSelect
+                  label="Método de Pago"
+                  name="metodo_pago"
+                  value={formData.metodo_pago}
+                  onChange={(value) => handleFormDataChange('metodo_pago', value)}
+                  options={[
+                    { value: 'TRANSFERENCIA', label: 'Transferencia' },
+                    { value: 'EFECTIVO', label: 'Efectivo' }
+                  ]}
+                  required
+                />
+              </div>
+              
+              {formData.status === 'PAGADA' && (
+                <FormInput
+                  label="Fecha de Pago"
+                  name="fecha_pago"
+                  type="date"
+                  value={formData.fecha_pago}
+                  onChange={(value) => handleFormDataChange('fecha_pago', value)}
+                  required={formData.status === 'PAGADA'}
+                />
+              )}
+              
+              <FormTextarea
+                label="Observaciones"
+                name="observaciones"
+                value={formData.observaciones}
+                onChange={(value) => handleFormDataChange('observaciones', value)}
+                placeholder="Observaciones adicionales..."
+                rows={3}
               />
+              
+              {modalData && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-700 mb-2">Información Completa</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-600">Participante:</span>
+                      <span className="ml-2 font-medium">{modalData.participant_name}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Acudiente:</span>
+                      <span className="ml-2 font-medium">{modalData.acudiente_name || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Método de Pago:</span>
+                      <span className="ml-2 font-medium">
+                        {modalData.metodo_pago === 'TRANSFERENCIA' ? 'Transferencia' : 
+                         modalData.metodo_pago === 'EFECTIVO' ? 'Efectivo' : 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Fecha de Pago:</span>
+                      <span className="ml-2 font-medium">
+                        {modalData.fecha_pago ? new Date(modalData.fecha_pago).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+                    {modalData.observaciones && (
+                      <div className="col-span-2">
+                        <span className="text-gray-600">Observaciones:</span>
+                        <p className="ml-2 mt-1 text-gray-700">{modalData.observaciones}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </FormModal>
         </DashboardLayout>

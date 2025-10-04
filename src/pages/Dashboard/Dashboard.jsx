@@ -18,13 +18,18 @@ const DashboardComponent = () => {
         // Load basic stats
         const { participantes, mensualidades } = await dbService.getDashboardData();
         
+        // Load acudientes count
+        const acudientesResult = await dbService.getAcudientes();
+        const totalAcudientes = acudientesResult?.data?.length || 0;
+        
         // Calculate stats from real data
         const stats = {
           totalParticipantes: participantes || 0,
           participantesActivos: participantes || 0, // Assuming all are active for now
           totalMensualidades: mensualidades || 0,
           mensualidadesPagadas: Math.floor((mensualidades || 0) * 0.7), // Mock 70% paid
-          mensualidadesPendientes: Math.ceil((mensualidades || 0) * 0.3) // Mock 30% pending
+          mensualidadesPendientes: Math.ceil((mensualidades || 0) * 0.3), // Mock 30% pending
+          totalAcudientes: totalAcudientes
         };
         
         setDashboardData(stats);
@@ -37,7 +42,8 @@ const DashboardComponent = () => {
           participantesActivos: 0,
           totalMensualidades: 0,
           mensualidadesPagadas: 0,
-          mensualidadesPendientes: 0
+          mensualidadesPendientes: 0,
+          totalAcudientes: 0
         });
       } finally {
         setLoading(false);
@@ -65,6 +71,14 @@ const DashboardComponent = () => {
       onClick: () => history.push('/participantes')
     },
     {
+      title: "Acudientes",
+      value: dashboardData?.totalAcudientes || 0,
+      icon: "fas fa-user-friends",
+      color: "purple",
+      subtitle: "Total registrados",
+      onClick: () => history.push('/acudientes')
+    },
+    {
       title: "Mensualidades",
       value: dashboardData?.mensualidadesPagadas || 0,
       icon: "fas fa-dollar-sign",
@@ -82,15 +96,27 @@ const DashboardComponent = () => {
       onClick: () => history.push('/participantes')
     },
     {
+      label: "Gestionar Acudientes",
+      icon: "fas fa-user-friends",
+      color: "purple",
+      onClick: () => history.push('/acudientes')
+    },
+    {
       label: "Gestión Financiera",
       icon: "fas fa-dollar-sign",
       color: "green",
       onClick: () => history.push('/financiero')
     },
     {
+      label: "Gestionar Usuarios",
+      icon: "fas fa-users-cog",
+      color: "indigo",
+      onClick: () => history.push('/usuarios')
+    },
+    {
       label: "Configuración",
       icon: "fas fa-cog",
-      color: "purple",
+      color: "gray",
       onClick: () => history.push('/configuracion')
     }
   ];

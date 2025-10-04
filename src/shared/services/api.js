@@ -690,6 +690,252 @@ class ApiService {
     }
   }
 
+  // Eliminar sede
+  async deleteSede(id) {
+    try {
+      if (!id) {
+        return {
+          error: { message: 'ID de sede requerido' }
+        };
+      }
+
+      await apiClient.delete(`/sedes/${id}`);
+      return { error: null };
+    } catch (error) {
+      console.error('Error eliminando sede:', error);
+      return {
+        error: {
+          message: error.response?.data?.message || error.message || 'Error al eliminar sede'
+        }
+      };
+    }
+  }
+
+  // ==================== USUARIOS ====================
+
+  /**
+   * Obtener lista de usuarios
+   * @returns {Promise<{data: Array, error: Object|null}>}
+   */
+  async getUsuarios() {
+    try {
+      const response = await apiClient.get('/usuarios');
+      return { data: response.data || [], error: null };
+    } catch (error) {
+      console.error('Error obteniendo usuarios:', error);
+      return {
+        data: [],
+        error: { message: 'Error al cargar usuarios' }
+      };
+    }
+  }
+
+  /**
+   * Crear nuevo usuario
+   * @param {Object} usuarioData - {email, password, rol}
+   * @returns {Promise<{data: Object, error: Object|null}>}
+   */
+  async createUsuario(usuarioData) {
+    try {
+      if (!usuarioData.email || !usuarioData.password || !usuarioData.rol) {
+        return {
+          data: null,
+          error: { message: 'Email, contraseña y rol son campos obligatorios' }
+        };
+      }
+
+      const response = await apiClient.post('/usuarios', usuarioData);
+      return { data: response.data, error: null };
+    } catch (error) {
+      console.error('Error creando usuario:', error);
+      return {
+        data: null,
+        error: {
+          message: error.response?.data?.message || error.message || 'Error al crear usuario'
+        }
+      };
+    }
+  }
+
+  /**
+   * Actualizar usuario existente
+   * @param {number} id - ID del usuario
+   * @param {Object} usuarioData - Datos a actualizar
+   * @returns {Promise<{data: Object, error: Object|null}>}
+   */
+  async updateUsuario(id, usuarioData) {
+    try {
+      if (!id) {
+        return {
+          data: null,
+          error: { message: 'ID de usuario requerido' }
+        };
+      }
+
+      const response = await apiClient.put(`/usuarios/${id}`, usuarioData);
+      return { data: response.data, error: null };
+    } catch (error) {
+      console.error('Error actualizando usuario:', error);
+      return {
+        data: null,
+        error: {
+          message: error.message || 'Error al actualizar usuario'
+        }
+      };
+    }
+  }
+
+  /**
+   * Eliminar usuario
+   * @param {number} id - ID del usuario
+   * @returns {Promise<{error: Object|null}>}
+   */
+  async deleteUsuario(id) {
+    try {
+      if (!id) {
+        return {
+          error: { message: 'ID de usuario requerido' }
+        };
+      }
+
+      await apiClient.delete(`/usuarios/${id}`);
+      return { error: null };
+    } catch (error) {
+      console.error('Error eliminando usuario:', error);
+      return {
+        error: {
+          message: error.message || 'Error al eliminar usuario'
+        }
+      };
+    }
+  }
+
+  // ==================== ACUDIENTES ====================
+
+  /**
+   * Obtener lista de acudientes
+   * @param {Object} filters - Filtros opcionales {participante_id}
+   * @returns {Promise<{data: Array, error: Object|null}>}
+   */
+  async getAcudientes(filters = {}) {
+    try {
+      const response = await apiClient.get('/acudientes', { params: filters });
+      return { data: response.data || [], error: null };
+    } catch (error) {
+      console.error('Error obteniendo acudientes:', error);
+      return {
+        data: [],
+        error: { message: 'Error al cargar acudientes' }
+      };
+    }
+  }
+
+  /**
+   * Obtener acudientes de un participante específico
+   * @param {number} participanteId - ID del participante
+   * @returns {Promise<{data: Array, error: Object|null}>}
+   */
+  async getAcudientesByParticipante(participanteId) {
+    try {
+      if (!participanteId) {
+        return {
+          data: [],
+          error: { message: 'ID de participante requerido' }
+        };
+      }
+
+      const response = await apiClient.get(`/participantes/${participanteId}/acudientes`);
+      return { data: response.data || [], error: null };
+    } catch (error) {
+      console.error('Error obteniendo acudientes del participante:', error);
+      return {
+        data: [],
+        error: { message: 'Error al cargar acudientes del participante' }
+      };
+    }
+  }
+
+  /**
+   * Crear nuevo acudiente
+   * @param {Object} acudienteData - Datos del acudiente
+   * @returns {Promise<{data: Object, error: Object|null}>}
+   */
+  async createAcudiente(acudienteData) {
+    try {
+      if (!acudienteData.id_participante || !acudienteData.numero_documento || 
+          !acudienteData.nombres || !acudienteData.apellidos) {
+        return {
+          data: null,
+          error: { message: 'Participante, documento, nombres y apellidos son campos obligatorios' }
+        };
+      }
+
+      const response = await apiClient.post('/acudientes', acudienteData);
+      return { data: response.data, error: null };
+    } catch (error) {
+      console.error('Error creando acudiente:', error);
+      return {
+        data: null,
+        error: {
+          message: error.response?.data?.message || error.message || 'Error al crear acudiente'
+        }
+      };
+    }
+  }
+
+  /**
+   * Actualizar acudiente existente
+   * @param {number} id - ID del acudiente
+   * @param {Object} acudienteData - Datos a actualizar
+   * @returns {Promise<{data: Object, error: Object|null}>}
+   */
+  async updateAcudiente(id, acudienteData) {
+    try {
+      if (!id) {
+        return {
+          data: null,
+          error: { message: 'ID de acudiente requerido' }
+        };
+      }
+
+      const response = await apiClient.put(`/acudientes/${id}`, acudienteData);
+      return { data: response.data, error: null };
+    } catch (error) {
+      console.error('Error actualizando acudiente:', error);
+      return {
+        data: null,
+        error: {
+          message: error.message || 'Error al actualizar acudiente'
+        }
+      };
+    }
+  }
+
+  /**
+   * Eliminar acudiente
+   * @param {number} id - ID del acudiente
+   * @returns {Promise<{error: Object|null}>}
+   */
+  async deleteAcudiente(id) {
+    try {
+      if (!id) {
+        return {
+          error: { message: 'ID de acudiente requerido' }
+        };
+      }
+
+      await apiClient.delete(`/acudientes/${id}`);
+      return { error: null };
+    } catch (error) {
+      console.error('Error eliminando acudiente:', error);
+      return {
+        error: {
+          message: error.message || 'Error al eliminar acudiente'
+        }
+      };
+    }
+  }
+
   // ==================== UTILIDADES ====================
 
   /**

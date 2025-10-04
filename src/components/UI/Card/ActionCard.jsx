@@ -7,7 +7,7 @@ import PropTypes from 'prop-types';
  * @param {Object} props
  * @param {string} props.label - Action label text
  * @param {string} props.icon - FontAwesome icon class
- * @param {'blue'|'green'|'red'|'purple'|'orange'|'gray'} props.color - Color scheme
+ * @param {'blue'|'green'|'red'|'purple'|'orange'|'gray'|'indigo'} props.color - Color scheme
  * @param {Function} props.onClick - Click handler
  * @param {boolean} props.disabled - Disabled state
  * @param {string} props.className - Additional CSS classes
@@ -51,6 +51,11 @@ const ActionCard = ({
       bg: 'bg-gray-100',
       text: 'text-gray-600',
       gradient: 'from-gray-100 to-gray-200'
+    },
+    indigo: {
+      bg: 'bg-indigo-100',
+      text: 'text-indigo-600',
+      gradient: 'from-indigo-100 to-indigo-200'
     }
   };
 
@@ -96,7 +101,7 @@ const ActionCard = ({
 ActionCard.propTypes = {
   label: PropTypes.string.isRequired,
   icon: PropTypes.string.isRequired,
-  color: PropTypes.oneOf(['blue', 'green', 'red', 'purple', 'orange', 'gray']),
+  color: PropTypes.oneOf(['blue', 'green', 'red', 'purple', 'orange', 'gray', 'indigo']),
   onClick: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
   className: PropTypes.string

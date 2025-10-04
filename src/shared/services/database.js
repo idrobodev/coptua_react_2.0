@@ -45,6 +45,57 @@ class DatabaseService {
     return await api.deleteParticipante(id);
   }
 
+  // ==================== USUARIOS ====================
+  
+  // Obtener lista de usuarios
+  async getUsuarios() {
+    return await api.getUsuarios();
+  }
+
+  // Crear nuevo usuario
+  async createUsuario(usuarioData) {
+    return await api.createUsuario(usuarioData);
+  }
+
+  // Actualizar usuario
+  async updateUsuario(id, usuarioData) {
+    return await api.updateUsuario(id, usuarioData);
+  }
+
+  // Eliminar usuario
+  async deleteUsuario(id) {
+    return await api.deleteUsuario(id);
+  }
+
+  // ==================== ACUDIENTES ====================
+  
+  // Obtener lista de acudientes
+  async getAcudientes(filters) {
+    return await api.getAcudientes(filters);
+  }
+
+  // Obtener acudientes de un participante específico
+  async getAcudientesByParticipante(participanteId) {
+    return await api.getAcudientesByParticipante(participanteId);
+  }
+
+  // Crear nuevo acudiente
+  async createAcudiente(acudienteData) {
+    return await api.createAcudiente(acudienteData);
+  }
+
+  // Actualizar acudiente
+  async updateAcudiente(id, acudienteData) {
+    return await api.updateAcudiente(id, acudienteData);
+  }
+
+  // Eliminar acudiente
+  async deleteAcudiente(id) {
+    return await api.deleteAcudiente(id);
+  }
+
+  // ==================== SEDES ====================
+
   // Obtener sedes
   async getSedes() {
     return await api.getSedes();
@@ -58,6 +109,11 @@ class DatabaseService {
   // Actualizar sede
   async updateSede(id, sedeData) {
     return await api.updateSede(id, sedeData);
+  }
+
+  // Eliminar sede
+  async deleteSede(id) {
+    return await api.deleteSede(id);
   }
 
   // Crear nueva mensualidad

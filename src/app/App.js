@@ -19,6 +19,8 @@ const Dashboard = React.lazy(() => import("pages/Dashboard/Dashboard"));
 const Finance = React.lazy(() => import("pages/Dashboard/Finance"));
 const Configuracion = React.lazy(() => import("pages/Dashboard/Configuracion"));
 const Participantes = React.lazy(() => import("pages/Dashboard/Participantes"));
+const Acudientes = React.lazy(() => import("pages/Dashboard/Acudientes"));
+const Usuarios = React.lazy(() => import("pages/Dashboard/Usuarios"));
 const Formatos = React.lazy(() => import("pages/Dashboard/Formatos"));
 const Sedes = React.lazy(() => import("pages/Dashboard/Sedes"));
 
@@ -28,7 +30,7 @@ const AppContent = React.memo(() => {
   
   // Memoize the dashboard route calculation to prevent unnecessary recalculations
   const isDashboardRoute = useMemo(() => {
-    const dashboardPaths = ['/dashboard', '/participantes', '/financiero', '/configuracion', '/formatos', '/sedes'];
+    const dashboardPaths = ['/dashboard', '/participantes', '/acudientes', '/usuarios', '/financiero', '/configuracion', '/formatos', '/sedes'];
     return dashboardPaths.some(path => location.pathname.startsWith(path));
   }, [location.pathname]);
 
@@ -63,6 +65,16 @@ const AppContent = React.memo(() => {
           <PrivateRoute path="/participantes">
             <Suspense fallback={<LoadingSpinner />}>
               <Participantes />
+            </Suspense>
+          </PrivateRoute>
+          <PrivateRoute path="/acudientes">
+            <Suspense fallback={<LoadingSpinner />}>
+              <Acudientes />
+            </Suspense>
+          </PrivateRoute>
+          <PrivateRoute path="/usuarios">
+            <Suspense fallback={<LoadingSpinner />}>
+              <Usuarios />
             </Suspense>
           </PrivateRoute>
           <PrivateRoute path="/financiero">

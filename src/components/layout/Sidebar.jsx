@@ -8,6 +8,9 @@ const Sidebar = ({ isOpen = false, onToggle = () => {}, isCollapsed = false, onT
   const history = useHistory();
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
+  
+  // Get user role from currentUser
+  const userRole = currentUser?.rol || currentUser?.role || 'CONSULTA';
 
   // Check for mobile screen size
   React.useEffect(() => {
@@ -31,50 +34,78 @@ const Sidebar = ({ isOpen = false, onToggle = () => {}, isCollapsed = false, onT
   };
 
 
-  const menuItems = [
+  const allMenuItems = [
     {
       id: 'dashboard',
       icon: 'fas fa-home',
       label: 'Dashboard',
       link: '/dashboard',
-      badge: null
+      badge: null,
+      roles: ['ADMINISTRADOR', 'CONSULTA'] // Available to all roles
     },
     {
       id: 'participantes',
       icon: 'fas fa-users',
       label: 'Participantes',
       link: '/participantes',
-      badge: null
+      badge: null,
+      roles: ['ADMINISTRADOR', 'CONSULTA']
+    },
+    {
+      id: 'acudientes',
+      icon: 'fas fa-user-friends',
+      label: 'Acudientes',
+      link: '/acudientes',
+      badge: null,
+      roles: ['ADMINISTRADOR', 'CONSULTA']
     },
     {
       id: 'financiero',
       icon: 'fas fa-dollar-sign',
       label: 'Mensualidades',
       link: '/financiero',
-      badge: null
+      badge: null,
+      roles: ['ADMINISTRADOR', 'CONSULTA']
+    },
+    {
+      id: 'usuarios',
+      icon: 'fas fa-users-cog',
+      label: 'Usuarios',
+      link: '/usuarios',
+      badge: null,
+      roles: ['ADMINISTRADOR'], // Only administrators
+      adminOnly: true
     },
     {
       id: 'formatos',
       icon: 'fas fa-file-alt',
       label: 'Formatos',
       link: '/formatos',
-      badge: null
+      badge: null,
+      roles: ['ADMINISTRADOR', 'CONSULTA']
     },
     {
       id: 'sedes',
       icon: 'fas fa-building',
       label: 'Sedes',
       link: '/sedes',
-      badge: null
+      badge: null,
+      roles: ['ADMINISTRADOR', 'CONSULTA']
     },
     {
       id: 'configuracion',
       icon: 'fas fa-cog',
       label: 'Configuración',
       link: '/configuracion',
-      badge: null
+      badge: null,
+      roles: ['ADMINISTRADOR', 'CONSULTA']
     }
   ];
+  
+  // Filter menu items based on user role
+  const menuItems = allMenuItems.filter(item => 
+    item.roles.includes(userRole)
+  );
 
   return (
     <>
@@ -198,7 +229,16 @@ const Sidebar = ({ isOpen = false, onToggle = () => {}, isCollapsed = false, onT
                 <p className="text-sm font-Poppins font-semibold text-gray-800 truncate">
                   {currentUser?.displayName || currentUser?.email?.split('@')[0]}
                 </p>
-                <p className="text-xs font-Poppins text-gray-600">Administrador</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-xs font-Poppins text-gray-600">
+                    {userRole === 'ADMINISTRADOR' ? 'Administrador' : 'Consulta'}
+                  </p>
+                  {userRole === 'CONSULTA' && (
+                    <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded" title="Solo lectura">
+                      <i className="fas fa-eye text-[10px]"></i>
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>

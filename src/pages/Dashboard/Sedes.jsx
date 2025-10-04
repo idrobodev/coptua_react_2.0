@@ -119,6 +119,42 @@ const SedesComponent = () => {
     }
   };
 
+  const handleDeleteSede = async (id) => {
+    try {
+      setLoading(true);
+      
+      // Verificar si la sede tiene participantes asociados
+      const participantesResult = await dbService.getParticipantes();
+      if (participantesResult.error) {
+        throw new Error('Error al verificar participantes asociados');
+      }
+      
+      const participantesEnSede = (participantesResult.data || []).filter(
+        p => p.id_sede === id || p.sede_id === id || p.sedeId === id
+      );
+      
+      if (participantesEnSede.length > 0) {
+        alert(`No se puede eliminar la sede porque tiene ${participantesEnSede.length} participante(s) asociado(s). Por favor, reasigna o elimina los participantes primero.`);
+        setLoading(false);
+        return;
+      }
+      
+      // Si no hay participantes, proceder con la eliminación
+      const result = await dbService.deleteSede(id);
+      if (result.error) {
+        throw new Error(result.error.message || 'Error al eliminar sede');
+      }
+      
+      // Recargar la lista de sedes
+      await loadSedes();
+      alert('Sede eliminada exitosamente');
+    } catch (err) {
+      console.error('Error eliminando sede:', err);
+      alert(err.message || 'Error al eliminar sede');
+      setLoading(false);
+    }
+  };
+
   const filterConfig = [
     {
       type: 'select',
@@ -248,6 +284,13 @@ const SedesComponent = () => {
                         <p className="text-sm text-gray-600">{sede.telefono}</p>
                       </div>
                     )}
+
+                    {sede.capacidad_maxima && (
+                      <div className="flex items-center">
+                        <i className="fas fa-users text-gray-400 mr-3 flex-shrink-0"></i>
+                        <p className="text-sm text-gray-600">Capacidad: {sede.capacidad_maxima} participantes</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons */}
@@ -282,6 +325,16 @@ const SedesComponent = () => {
                               editarModal.setData(sede);
                               editarModal.open();
                             }
+                          },
+                          {
+                            label: 'Eliminar',
+                            icon: 'fas fa-trash',
+                            onClick: async () => {
+                              if (window.confirm('¿Estás seguro de que deseas eliminar esta sede?')) {
+                                await handleDeleteSede(sede.id);
+                              }
+                            },
+                            variant: 'danger'
                           }
                         ]}
                       />
@@ -303,6 +356,7 @@ const SedesComponent = () => {
           { label: 'Nombre', value: verModal.data.nombre },
           { label: 'Dirección', value: verModal.data.direccion, fullWidth: true },
           { label: 'Teléfono', value: verModal.data.telefono },
+          { label: 'Capacidad Máxima', value: verModal.data.capacidad_maxima ? `${verModal.data.capacidad_maxima} participantes` : 'No especificada' },
           { label: 'Estado', value: verModal.data.estado },
           { label: 'Tipo', value: verModal.data.tipo || 'No especificado' }
         ] : []}
@@ -313,6 +367,14 @@ const SedesComponent = () => {
         onClose={editarModal.close}
         title="Editar Sede"
         onSubmit={async (formData) => {
+          // Validar capacidad_maxima si está presente
+          if (formData.capacidad_maxima !== undefined && formData.capacidad_maxima !== null && formData.capacidad_maxima !== '') {
+            const capacidad = Number(formData.capacidad_maxima);
+            if (isNaN(capacidad) || capacidad <= 0) {
+              throw new Error('La capacidad máxima debe ser un número positivo');
+            }
+          }
+          
           const result = await dbService.updateSede(editarModal.data.id, formData);
           if (result.error) {
             throw new Error(result.error.message || 'Error al actualizar sede');
@@ -324,6 +386,7 @@ const SedesComponent = () => {
           { name: 'nombre', label: 'Nombre', type: 'text', required: true },
           { name: 'telefono', label: 'Teléfono', type: 'tel' },
           { name: 'direccion', label: 'Dirección', type: 'textarea', required: true, fullWidth: true },
+          { name: 'capacidad_maxima', label: 'Capacidad Máxima', type: 'number', placeholder: 'Número de participantes', min: 1 },
           { 
             name: 'estado', 
             label: 'Estado', 
@@ -354,6 +417,15 @@ const SedesComponent = () => {
           if (!formData.nombre?.trim() || !formData.direccion?.trim()) {
             throw new Error('Nombre y dirección son campos obligatorios');
           }
+          
+          // Validar capacidad_maxima si está presente
+          if (formData.capacidad_maxima !== undefined && formData.capacidad_maxima !== null && formData.capacidad_maxima !== '') {
+            const capacidad = Number(formData.capacidad_maxima);
+            if (isNaN(capacidad) || capacidad <= 0) {
+              throw new Error('La capacidad máxima debe ser un número positivo');
+            }
+          }
+          
           const result = await dbService.createSede(formData);
           if (result.error) {
             throw new Error(result.error.message || 'Error al crear sede');
@@ -364,6 +436,7 @@ const SedesComponent = () => {
           nombre: '',
           direccion: '',
           telefono: '',
+          capacidad_maxima: '',
           estado: 'Activa',
           tipo: 'Principal'
         }}
@@ -371,6 +444,7 @@ const SedesComponent = () => {
           { name: 'nombre', label: 'Nombre', type: 'text', required: true, placeholder: 'Nombre de la sede' },
           { name: 'telefono', label: 'Teléfono', type: 'tel', placeholder: 'Número de teléfono' },
           { name: 'direccion', label: 'Dirección', type: 'textarea', required: true, placeholder: 'Dirección completa de la sede', fullWidth: true },
+          { name: 'capacidad_maxima', label: 'Capacidad Máxima', type: 'number', placeholder: 'Número de participantes', min: 1 },
           { 
             name: 'estado', 
             label: 'Estado', 

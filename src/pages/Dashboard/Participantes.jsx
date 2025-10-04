@@ -4,6 +4,12 @@ import { dbService } from "shared/services";
 import { FilterBar, StatsGrid, DataTable, ActionDropdown, StatusToggle, FormInput, FormSelect, FormGroup } from "components/UI";
 import { ViewDetailsModal, EditFormModal, CreateFormModal } from "components/common";
 import { useFilters, useModal } from "shared/hooks";
+import { 
+  validateParticipanteDocumentoUnico, 
+  validateFechaNacimiento, 
+  validateFechaIngreso,
+  validateSedeExists 
+} from "shared/utils/validationUtils";
 // import jsPDF from 'jspdf'; // Temporarily disabled - not available in Docker dev
 
 const Participantes = React.memo(() => {
@@ -71,19 +77,37 @@ const Participantes = React.memo(() => {
     let filtered = safeParticipantes;
 
     if (filtros.sede !== "Todas") {
-      filtered = filtered.filter(p => p.sede && p.sede.toLowerCase().includes(filtros.sede.toLowerCase()));
+      filtered = filtered.filter(p => {
+        const sedeNombre = p.sede?.direccion || p.sede || '';
+        return sedeNombre.toLowerCase().includes(filtros.sede.toLowerCase());
+      });
     }
     if (filtros.genero !== "Todos") {
       filtered = filtered.filter(p => p.genero === filtros.genero);
     }
     if (filtros.estado !== "Todos") {
-      filtered = filtered.filter(p => p.estado === filtros.estado);
+      // Support both ACTIVO/INACTIVO and Activo/Inactivo
+      const estadoUpper = filtros.estado.toUpperCase();
+      filtered = filtered.filter(p => 
+        p.estado === filtros.estado || 
+        p.estado === estadoUpper ||
+        (filtros.estado === 'Activo' && p.estado === 'ACTIVO') ||
+        (filtros.estado === 'Inactivo' && p.estado === 'INACTIVO')
+      );
     }
     if (filtros.busqueda) {
-      filtered = filtered.filter(p =>
-        (p.nombre || '').toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
-        (p.telefono || '').includes(filtros.busqueda)
-      );
+      const searchLower = filtros.busqueda.toLowerCase();
+      filtered = filtered.filter(p => {
+        const nombreCompleto = p.nombres && p.apellidos 
+          ? `${p.nombres} ${p.apellidos}`.toLowerCase()
+          : (p.nombre || '').toLowerCase();
+        const documento = (p.numero_documento || '').toLowerCase();
+        const telefono = (p.telefono || '');
+        
+        return nombreCompleto.includes(searchLower) ||
+               documento.includes(searchLower) ||
+               telefono.includes(filtros.busqueda);
+      });
     }
     return filtered;
   }, [participantes, filtros]);
@@ -354,27 +378,47 @@ const Participantes = React.memo(() => {
             },
             {
               title: 'Activos',
-              value: filteredParticipantes.filter(p => p.estado === "Activo").length,
+              value: filteredParticipantes.filter(p => p.estado === "ACTIVO" || p.estado === "Activo").length,
               icon: 'fas fa-user-check',
               color: 'green'
             },
             {
               title: 'Inactivos',
-              value: filteredParticipantes.filter(p => p.estado === "Inactivo").length,
+              value: filteredParticipantes.filter(p => p.estado === "INACTIVO" || p.estado === "Inactivo").length,
               icon: 'fas fa-user-times',
               color: 'red'
             },
             {
               title: 'Promedio Edad',
-              value: filteredParticipantes.length > 0
-                ? `${Math.round(filteredParticipantes.reduce((sum, p) => sum + (p.edad || 0), 0) / filteredParticipantes.length)} años`
-                : '0 años',
+              value: (() => {
+                if (filteredParticipantes.length === 0) return '0 años';
+                
+                const edades = filteredParticipantes.map(p => {
+                  if (p.fecha_nacimiento) {
+                    const birthDate = new Date(p.fecha_nacimiento);
+                    const today = new Date();
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                      age--;
+                    }
+                    return age;
+                  }
+                  return p.edad || 0;
+                });
+                
+                const promedio = Math.round(edades.reduce((sum, edad) => sum + edad, 0) / edades.length);
+                return `${promedio} años`;
+              })(),
               icon: 'fas fa-birthday-cake',
               color: 'blue'
             },
             {
               title: 'Sedes Bello',
-              value: filteredParticipantes.filter(p => p.sede && p.sede.toLowerCase().includes("bello")).length,
+              value: filteredParticipantes.filter(p => {
+                const sedeNombre = p.sede?.direccion || p.sede || '';
+                return sedeNombre.toLowerCase().includes("bello");
+              }).length,
               icon: 'fas fa-map-marker-alt',
               color: 'purple'
             }
@@ -393,26 +437,51 @@ const Participantes = React.memo(() => {
           
           <DataTable
             data={filteredParticipantes}
-            keyExtractor={(row) => row.id}
+            keyExtractor={(row) => row.id || row.id_participante}
             columns={[
               {
                 key: 'participante',
                 header: 'Participante',
-                render: (row) => (
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <i className="fas fa-user text-blue-600"></i>
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {row.nombre}
+                render: (row) => {
+                  const nombreCompleto = row.nombres && row.apellidos 
+                    ? `${row.nombres} ${row.apellidos}` 
+                    : row.nombre || 'N/A';
+                  const tipoDoc = row.tipo_documento || 'N/A';
+                  const numDoc = row.numero_documento || 'N/A';
+                  
+                  return (
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i className="fas fa-user text-blue-600"></i>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {row.edad} años • {row.telefono}
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {nombreCompleto}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {tipoDoc} {numDoc}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
+                  );
+                }
+              },
+              {
+                key: 'edad',
+                header: 'Edad',
+                render: (row) => {
+                  if (row.fecha_nacimiento) {
+                    const birthDate = new Date(row.fecha_nacimiento);
+                    const today = new Date();
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                      age--;
+                    }
+                    return `${age} años`;
+                  }
+                  return row.edad ? `${row.edad} años` : 'N/A';
+                }
               },
               {
                 key: 'genero',
@@ -422,9 +491,19 @@ const Participantes = React.memo(() => {
                 )
               },
               {
+                key: 'fecha_ingreso',
+                header: 'Fecha Ingreso',
+                render: (row) => {
+                  if (row.fecha_ingreso) {
+                    return new Date(row.fecha_ingreso).toLocaleDateString('es-ES');
+                  }
+                  return 'N/A';
+                }
+              },
+              {
                 key: 'sede',
                 header: 'Sede',
-                render: (row) => row.sede
+                render: (row) => row.sede?.direccion || row.sede || 'N/A'
               },
               {
                 key: 'estado',
@@ -433,10 +512,12 @@ const Participantes = React.memo(() => {
                   <StatusToggle
                     currentStatus={row.estado}
                     statuses={[
+                      { value: 'ACTIVO', label: 'Activo', variant: 'success' },
                       { value: 'Activo', label: 'Activo', variant: 'success' },
+                      { value: 'INACTIVO', label: 'Inactivo', variant: 'danger' },
                       { value: 'Inactivo', label: 'Inactivo', variant: 'danger' }
                     ]}
-                    onChange={(newEstado) => toggleEstado(row.id, newEstado)}
+                    onChange={(newEstado) => toggleEstado(row.id || row.id_participante, newEstado)}
                   />
                 )
               },
@@ -467,32 +548,14 @@ const Participantes = React.memo(() => {
       </div>
 
       {/* Modales */}
-      <ViewDetailsModal
+      <ParticipanteViewModal
         isOpen={viewModal.isOpen}
         onClose={viewModal.closeModal}
-        title="Detalles del Participante"
-        data={viewModal.modalData ? [
-          { label: 'Nombre Completo', value: viewModal.modalData.nombre },
-          { label: 'Edad', value: `${viewModal.modalData.edad} años` },
-          { label: 'Teléfono', value: viewModal.modalData.telefono },
-          { label: 'Sede', value: viewModal.modalData.sede },
-          { 
-            label: 'Estado', 
-            value: (
-              <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                viewModal.modalData.estado === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
-                {viewModal.modalData.estado}
-              </span>
-            )
-          },
-          { 
-            label: 'Fecha de Ingreso', 
-            value: viewModal.modalData.fechaIngreso
-              ? new Date(viewModal.modalData.fechaIngreso).toLocaleDateString('es-ES')
-              : 'No disponible'
-          }
-        ] : []}
+        participante={viewModal.modalData}
+        onCrearAcudiente={() => {
+          // TODO: Open acudiente creation modal with participante pre-selected
+          console.log('Crear acudiente para participante:', viewModal.modalData);
+        }}
       />
 
       <ParticipanteEditModal
@@ -511,20 +574,148 @@ const Participantes = React.memo(() => {
   );
 });
 
-// Helper function for sede options by gender
-const getSedesPorGenero = (genero) => {
-  if (genero === 'MASCULINO') {
-    return [
-      { value: 'Sede Masculina Bello Principal', label: 'Bello Principal Masculina' },
-      { value: 'Sede Masculina Bello Campestre', label: 'Bello Campestre Masculina' },
-      { value: 'Sede Masculina Apartadó', label: 'Apartadó Masculina' },
-    ];
-  } else {
-    return [
-      { value: 'Sede Femenina Bello Principal', label: 'Bello Principal Femenina' },
-      { value: 'Sede Femenina Apartadó', label: 'Apartadó Femenina' },
-    ];
-  }
+// View Modal Component with Acudientes
+const ParticipanteViewModal = ({ isOpen, onClose, participante, onCrearAcudiente }) => {
+  const [acudientes, setAcudientes] = useState([]);
+  const [loadingAcudientes, setLoadingAcudientes] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && participante) {
+      loadAcudientes();
+    }
+  }, [isOpen, participante]);
+
+  const loadAcudientes = async () => {
+    if (!participante?.id && !participante?.id_participante) return;
+    
+    try {
+      setLoadingAcudientes(true);
+      const participanteId = participante.id || participante.id_participante;
+      const result = await dbService.getAcudientesByParticipante(participanteId);
+      
+      if (result.data && Array.isArray(result.data)) {
+        setAcudientes(result.data);
+      } else {
+        setAcudientes([]);
+      }
+    } catch (err) {
+      console.error('Error loading acudientes:', err);
+      setAcudientes([]);
+    } finally {
+      setLoadingAcudientes(false);
+    }
+  };
+
+  if (!participante) return null;
+
+  const nombreCompleto = participante.nombres && participante.apellidos 
+    ? `${participante.nombres} ${participante.apellidos}` 
+    : participante.nombre || 'N/A';
+
+  const edad = (() => {
+    if (participante.fecha_nacimiento) {
+      const birthDate = new Date(participante.fecha_nacimiento);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age;
+    }
+    return participante.edad || 'N/A';
+  })();
+
+  const estadoLabel = participante.estado === 'ACTIVO' || participante.estado === 'Activo' ? 'Activo' : 'Inactivo';
+  const estadoClass = participante.estado === 'ACTIVO' || participante.estado === 'Activo' 
+    ? 'bg-green-100 text-green-800' 
+    : 'bg-red-100 text-red-800';
+
+  return (
+    <ViewDetailsModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Detalles del Participante"
+      data={[
+        { label: 'Nombre Completo', value: nombreCompleto },
+        { label: 'Tipo de Documento', value: participante.tipo_documento || 'N/A' },
+        { label: 'Número de Documento', value: participante.numero_documento || 'N/A' },
+        { label: 'Edad', value: typeof edad === 'number' ? `${edad} años` : edad },
+        { label: 'Fecha de Nacimiento', value: participante.fecha_nacimiento 
+          ? new Date(participante.fecha_nacimiento).toLocaleDateString('es-ES') 
+          : 'N/A' 
+        },
+        { label: 'Género', value: participante.genero === 'MASCULINO' ? 'Masculino' : participante.genero === 'FEMENINO' ? 'Femenino' : 'N/A' },
+        { label: 'Fecha de Ingreso', value: participante.fecha_ingreso
+          ? new Date(participante.fecha_ingreso).toLocaleDateString('es-ES')
+          : 'N/A'
+        },
+        { label: 'Sede', value: participante.sede?.direccion || participante.sede || 'N/A' },
+        { label: 'Teléfono', value: participante.telefono || 'N/A' },
+        { 
+          label: 'Estado', 
+          value: (
+            <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${estadoClass}`}>
+              {estadoLabel}
+            </span>
+          )
+        },
+        {
+          label: 'Acudientes',
+          value: (
+            <div className="mt-2">
+              {loadingAcudientes ? (
+                <p className="text-sm text-gray-500">Cargando acudientes...</p>
+              ) : acudientes.length > 0 ? (
+                <div className="space-y-2">
+                  {acudientes.map((acudiente, index) => (
+                    <div key={acudiente.id_acudiente || index} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {acudiente.nombres} {acudiente.apellidos}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {acudiente.parentesco} • {acudiente.tipo_documento} {acudiente.numero_documento}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            <i className="fas fa-phone mr-1"></i>{acudiente.telefono}
+                            {acudiente.email && (
+                              <span className="ml-2">
+                                <i className="fas fa-envelope mr-1"></i>{acudiente.email}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={onCrearAcudiente}
+                    className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    <i className="fas fa-plus mr-1"></i>
+                    Agregar otro acudiente
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500 mb-2">No hay acudientes registrados</p>
+                  <button
+                    onClick={onCrearAcudiente}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    <i className="fas fa-plus mr-1"></i>
+                    Agregar acudiente
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        }
+      ]}
+    />
+  );
 };
 
 // Edit Modal Component
@@ -533,7 +724,47 @@ const ParticipanteEditModal = ({ isOpen, onClose, participante, onActualizar }) 
 
   const handleSubmit = async (formData) => {
     console.log('🔄 Actualizando participante:', formData);
-    const result = await dbService.updateParticipante(participante.id, formData);
+    
+    // Validate required fields
+    if (!formData.tipo_documento || !formData.numero_documento) {
+      throw new Error('Tipo y número de documento son requeridos');
+    }
+    if (!formData.nombres?.trim() || !formData.apellidos?.trim()) {
+      throw new Error('Nombres y apellidos son requeridos');
+    }
+    if (!formData.fecha_nacimiento || !formData.fecha_ingreso) {
+      throw new Error('Fechas de nacimiento e ingreso son requeridas');
+    }
+    if (!formData.id_sede) {
+      throw new Error('Debe seleccionar una sede');
+    }
+    
+    // Validate fecha_nacimiento format and value
+    const fechaNacimientoValidation = validateFechaNacimiento(formData.fecha_nacimiento);
+    if (!fechaNacimientoValidation.isValid) {
+      throw new Error(fechaNacimientoValidation.error);
+    }
+    
+    // Validate fecha_ingreso format and value
+    const fechaIngresoValidation = validateFechaIngreso(formData.fecha_ingreso);
+    if (!fechaIngresoValidation.isValid) {
+      throw new Error(fechaIngresoValidation.error);
+    }
+    
+    // Validate documento único
+    const participanteId = participante.id || participante.id_participante;
+    const documentoValidation = await validateParticipanteDocumentoUnico(formData.numero_documento, participanteId);
+    if (!documentoValidation.isValid) {
+      throw new Error(documentoValidation.error);
+    }
+    
+    // Validate sede exists
+    const sedeValidation = await validateSedeExists(formData.id_sede);
+    if (!sedeValidation.isValid) {
+      throw new Error(sedeValidation.error);
+    }
+    
+    const result = await dbService.updateParticipante(participanteId, formData);
     
     if (result.error) {
       throw new Error(result.error.message || 'Error al actualizar participante');
@@ -549,12 +780,15 @@ const ParticipanteEditModal = ({ isOpen, onClose, participante, onActualizar }) 
       onClose={onClose}
       title="Editar Participante"
       initialData={{
-        nombre: participante.nombre,
-        edad: participante.edad,
-        telefono: participante.telefono,
+        tipo_documento: participante.tipo_documento || 'CC',
+        numero_documento: participante.numero_documento || '',
+        nombres: participante.nombres || participante.nombre?.split(' ')[0] || '',
+        apellidos: participante.apellidos || participante.nombre?.split(' ').slice(1).join(' ') || '',
+        fecha_nacimiento: participante.fecha_nacimiento || '',
         genero: participante.genero || 'MASCULINO',
-        sede: participante.sede,
-        estado: participante.estado,
+        fecha_ingreso: participante.fecha_ingreso || '',
+        estado: participante.estado || 'ACTIVO',
+        id_sede: participante.id_sede || participante.sede_id || '',
       }}
       onSubmit={handleSubmit}
       submitLabel="Guardar Cambios"
@@ -575,11 +809,42 @@ const ParticipanteCreateModal = ({ isOpen, onClose, onCrear }) => {
   const handleSubmit = async (formData) => {
     console.log('🔄 Creando participante:', formData);
     
-    if (!formData.nombre.trim()) {
-      throw new Error('El nombre es requerido');
+    // Validate required fields
+    if (!formData.tipo_documento || !formData.numero_documento) {
+      throw new Error('Tipo y número de documento son requeridos');
     }
-    if (!formData.telefono.trim()) {
-      throw new Error('El teléfono es requerido');
+    if (!formData.nombres?.trim() || !formData.apellidos?.trim()) {
+      throw new Error('Nombres y apellidos son requeridos');
+    }
+    if (!formData.fecha_nacimiento || !formData.fecha_ingreso) {
+      throw new Error('Fechas de nacimiento e ingreso son requeridas');
+    }
+    if (!formData.id_sede) {
+      throw new Error('Debe seleccionar una sede');
+    }
+    
+    // Validate fecha_nacimiento format and value
+    const fechaNacimientoValidation = validateFechaNacimiento(formData.fecha_nacimiento);
+    if (!fechaNacimientoValidation.isValid) {
+      throw new Error(fechaNacimientoValidation.error);
+    }
+    
+    // Validate fecha_ingreso format and value
+    const fechaIngresoValidation = validateFechaIngreso(formData.fecha_ingreso);
+    if (!fechaIngresoValidation.isValid) {
+      throw new Error(fechaIngresoValidation.error);
+    }
+    
+    // Validate documento único
+    const documentoValidation = await validateParticipanteDocumentoUnico(formData.numero_documento);
+    if (!documentoValidation.isValid) {
+      throw new Error(documentoValidation.error);
+    }
+    
+    // Validate sede exists
+    const sedeValidation = await validateSedeExists(formData.id_sede);
+    if (!sedeValidation.isValid) {
+      throw new Error(sedeValidation.error);
     }
     
     const result = await dbService.createParticipante(formData);
@@ -598,12 +863,15 @@ const ParticipanteCreateModal = ({ isOpen, onClose, onCrear }) => {
       onClose={onClose}
       title="Nuevo Participante"
       defaultValues={{
-        nombre: '',
-        edad: '',
-        telefono: '',
+        tipo_documento: 'CC',
+        numero_documento: '',
+        nombres: '',
+        apellidos: '',
+        fecha_nacimiento: '',
         genero: 'MASCULINO',
-        sede: 'Sede Masculina Bello Principal',
-        estado: 'Activo',
+        fecha_ingreso: '',
+        estado: 'ACTIVO',
+        id_sede: '',
       }}
       onSubmit={handleSubmit}
       submitLabel="Crear Participante"
@@ -621,41 +889,91 @@ const ParticipanteCreateModal = ({ isOpen, onClose, onCrear }) => {
 
 // Shared Form Component using reusable Form components
 const ParticipanteForm = ({ formData, handleChange, errors }) => {
-  const handleGeneroChange = (genero) => {
-    const sedesDisponibles = getSedesPorGenero(genero);
-    const nuevaSede = sedesDisponibles[0]?.value || '';
-    handleChange('genero', genero);
-    handleChange('sede', nuevaSede);
-  };
+  const [sedes, setSedes] = useState([]);
+  const [loadingSedes, setLoadingSedes] = useState(true);
+
+  useEffect(() => {
+    const loadSedes = async () => {
+      try {
+        setLoadingSedes(true);
+        const result = await dbService.getSedes();
+        if (result.data && Array.isArray(result.data)) {
+          setSedes(result.data);
+        }
+      } catch (err) {
+        console.error('Error loading sedes:', err);
+      } finally {
+        setLoadingSedes(false);
+      }
+    };
+    loadSedes();
+  }, []);
 
   return (
     <FormGroup columns={2} gap="md">
-      <FormInput
-        label="Nombre Completo"
-        name="nombre"
-        type="text"
-        value={formData.nombre}
-        onChange={(value) => handleChange('nombre', value)}
-        error={errors?.nombre}
+      <FormSelect
+        label="Tipo de Documento"
+        name="tipo_documento"
+        value={formData.tipo_documento}
+        onChange={(value) => handleChange('tipo_documento', value)}
+        options={[
+          { value: 'CC', label: 'Cédula de Ciudadanía' },
+          { value: 'TI', label: 'Tarjeta de Identidad' },
+          { value: 'CE', label: 'Cédula de Extranjería' },
+          { value: 'PASAPORTE', label: 'Pasaporte' }
+        ]}
+        error={errors?.tipo_documento}
         required
-        placeholder="Ingrese el nombre completo"
       />
 
       <FormInput
-        label="Edad"
-        name="edad"
-        type="number"
-        value={formData.edad}
-        onChange={(value) => handleChange('edad', value)}
-        error={errors?.edad}
-        placeholder="Edad"
+        label="Número de Documento"
+        name="numero_documento"
+        type="text"
+        value={formData.numero_documento}
+        onChange={(value) => handleChange('numero_documento', value)}
+        error={errors?.numero_documento}
+        required
+        placeholder="Ingrese el número de documento"
+      />
+
+      <FormInput
+        label="Nombres"
+        name="nombres"
+        type="text"
+        value={formData.nombres}
+        onChange={(value) => handleChange('nombres', value)}
+        error={errors?.nombres}
+        required
+        placeholder="Ingrese los nombres"
+      />
+
+      <FormInput
+        label="Apellidos"
+        name="apellidos"
+        type="text"
+        value={formData.apellidos}
+        onChange={(value) => handleChange('apellidos', value)}
+        error={errors?.apellidos}
+        required
+        placeholder="Ingrese los apellidos"
+      />
+
+      <FormInput
+        label="Fecha de Nacimiento"
+        name="fecha_nacimiento"
+        type="date"
+        value={formData.fecha_nacimiento}
+        onChange={(value) => handleChange('fecha_nacimiento', value)}
+        error={errors?.fecha_nacimiento}
+        required
       />
 
       <FormSelect
         label="Género"
         name="genero"
         value={formData.genero}
-        onChange={(value) => handleGeneroChange(value)}
+        onChange={(value) => handleChange('genero', value)}
         options={[
           { value: 'MASCULINO', label: 'Masculino' },
           { value: 'FEMENINO', label: 'Femenino' }
@@ -665,26 +983,13 @@ const ParticipanteForm = ({ formData, handleChange, errors }) => {
       />
 
       <FormInput
-        label="Teléfono"
-        name="telefono"
-        type="tel"
-        value={formData.telefono}
-        onChange={(value) => handleChange('telefono', value)}
-        error={errors?.telefono}
+        label="Fecha de Ingreso"
+        name="fecha_ingreso"
+        type="date"
+        value={formData.fecha_ingreso}
+        onChange={(value) => handleChange('fecha_ingreso', value)}
+        error={errors?.fecha_ingreso}
         required
-        placeholder="Número de teléfono"
-      />
-
-      <FormSelect
-        label="Sede"
-        name="sede"
-        value={formData.sede}
-        onChange={(value) => handleChange('sede', value)}
-        options={getSedesPorGenero(formData.genero).map(sede => ({
-          value: sede.value,
-          label: sede.label
-        }))}
-        error={errors?.sede}
       />
 
       <FormSelect
@@ -693,10 +998,25 @@ const ParticipanteForm = ({ formData, handleChange, errors }) => {
         value={formData.estado}
         onChange={(value) => handleChange('estado', value)}
         options={[
-          { value: 'Activo', label: 'Activo' },
-          { value: 'Inactivo', label: 'Inactivo' }
+          { value: 'ACTIVO', label: 'Activo' },
+          { value: 'INACTIVO', label: 'Inactivo' }
         ]}
         error={errors?.estado}
+        required
+      />
+
+      <FormSelect
+        label="Sede"
+        name="id_sede"
+        value={formData.id_sede}
+        onChange={(value) => handleChange('id_sede', value)}
+        options={loadingSedes ? [{ value: '', label: 'Cargando sedes...' }] : sedes.map(sede => ({
+          value: sede.id_sede || sede.id,
+          label: sede.direccion || sede.nombre
+        }))}
+        error={errors?.id_sede}
+        required
+        disabled={loadingSedes}
       />
     </FormGroup>
   );
