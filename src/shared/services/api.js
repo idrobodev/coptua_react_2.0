@@ -1,76 +1,98 @@
-// Servicio API para comunicación con Spring Boot Backend
+// Servicio API   
 import axios from 'axios';
 
-// Configuración base de la API
-// Usar la URL del host actual para la API
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ||
+// Configuración base de las APIs
+// URLs para servicios separados
+const AUTH_API_BASE_URL = process.env.REACT_APP_AUTH_API_BASE_URL ||
   `${window.location.protocol}//${window.location.hostname}:8080/api`;
 
-console.log('🔧 API_BASE_URL configurada como:', API_BASE_URL);
+const DASHBOARD_API_BASE_URL = process.env.REACT_APP_DASHBOARD_API_BASE_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8081/api`;
 
-// Crear instancia de axios con configuración base
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000, // 30 segundos timeout para operaciones pesadas
-  withCredentials: false, // false por defecto - cambiar a true solo si backend requiere cookies/credenciales
+console.log('🔧 AUTH_API_BASE_URL configurada como:', AUTH_API_BASE_URL);
+console.log('🔧 DASHBOARD_API_BASE_URL configurada como:', DASHBOARD_API_BASE_URL);
+
+// Crear instancia de axios para autenticación
+const authClient = axios.create({
+  baseURL: AUTH_API_BASE_URL,
+  timeout: 30000,
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json', // Especificar que esperamos JSON en las respuestas
+    'Accept': 'application/json',
   },
 });
 
-// Interceptor para agregar token de autenticación
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+// Crear instancia de axios para dashboard
+const dashboardClient = axios.create({
+  baseURL: DASHBOARD_API_BASE_URL,
+  timeout: 30000,
+  withCredentials: false,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
-  (error) => {
-    console.error('Error en request interceptor:', error);
-    return Promise.reject(error);
-  }
-);
+});
 
-// Interceptor para manejar respuestas y errores
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const errorInfo = generateErrorMessage(error);
-
-    // Solo log crítico de errores
-    if (errorInfo.isCorsError) {
-      console.error('CORS ERROR:', error.config?.url);
-    } else if (errorInfo.isNetworkError) {
-      console.error('Network error:', error.message);
-    } else if (error.response) {
-      console.error(`HTTP ${error.response.status}:`, error.response.data);
+// Función helper para configurar interceptors
+const setupInterceptors = (client, serviceName) => {
+  // Interceptor para agregar token de autenticación
+  client.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => {
+      console.error(`Error en ${serviceName} request interceptor:`, error);
+      return Promise.reject(error);
     }
+  );
 
-    // Manejar errores de autenticación
-    if (error.response?.status === 401 && !errorInfo.isNetworkError) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('currentUser');
-      window.location.href = '/login';
+  // Interceptor para manejar respuestas y errores
+  client.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      const errorInfo = generateErrorMessage(error);
+
+      // Solo log crítico de errores
+      if (errorInfo.isCorsError) {
+        console.error(`CORS ERROR (${serviceName}):`, error.config?.url);
+      } else if (errorInfo.isNetworkError) {
+        console.error(`Network error (${serviceName}):`, error.message);
+      } else if (error.response) {
+        console.error(`HTTP ${error.response.status} (${serviceName}):`, error.response.data);
+      }
+
+      // Manejar errores de autenticación
+      if (error.response?.status === 401 && !errorInfo.isNetworkError) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        window.location.href = '/login';
+      }
+
+      const enhancedError = {
+        message: errorInfo.message,
+        type: errorInfo.type,
+        status: errorInfo.status,
+        isCorsError: errorInfo.isCorsError,
+        isNetworkError: errorInfo.isNetworkError,
+        suggestions: errorInfo.suggestions,
+        serverMessage: error.response?.data?.message || null,
+        originalError: error,
+        response: error.response
+      };
+
+      return Promise.reject(enhancedError);
     }
+  );
+};
 
-    const enhancedError = {
-      message: errorInfo.message,
-      type: errorInfo.type,
-      status: errorInfo.status,
-      isCorsError: errorInfo.isCorsError,
-      isNetworkError: errorInfo.isNetworkError,
-      suggestions: errorInfo.suggestions,
-      serverMessage: error.response?.data?.message || null,
-      originalError: error,
-      response: error.response
-    };
-
-    return Promise.reject(enhancedError);
-  }
-);
+// Configurar interceptors para ambos clientes
+setupInterceptors(authClient, 'AUTH');
+setupInterceptors(dashboardClient, 'DASHBOARD');
 
 // Definición de roles del sistema
 export const ROLES = {
@@ -319,7 +341,7 @@ class ApiService {
 
   async login(email, password) {
     try {
-      const response = await apiClient.post('/auth/login', { email, password });
+      const response = await authClient.post('/auth/login', { email, password });
       const { data: responseData, error: responseError } = response.data;
 
       if (responseError) {
@@ -357,7 +379,7 @@ class ApiService {
   // Cerrar sesión
   async logout() {
     try {
-      await apiClient.post('/auth/logout');
+      await authClient.post('/auth/logout');
 
       // Limpiar localStorage
       localStorage.removeItem('authToken');
@@ -377,7 +399,7 @@ class ApiService {
   // Restablecer contraseña
   async resetPassword(email) {
     try {
-      const response = await apiClient.post('/auth/reset-password', { email });
+      const response = await authClient.post('/auth/reset-password', { email });
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error en reset password:', error);
@@ -424,7 +446,7 @@ class ApiService {
   // Actualizar perfil de usuario
   async updateProfile(profileData) {
     try {
-      const response = await apiClient.put('/auth/profile', profileData);
+      const response = await authClient.put('/auth/profile', profileData);
 
       // Actualizar usuario en localStorage
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
@@ -447,7 +469,7 @@ class ApiService {
   async hasPermission(requiredRole) {
     try {
       // Consultar endpoint real en backend
-      const response = await apiClient.get('/auth/permission', {
+      const response = await authClient.get('/auth/permission', {
         params: { role: requiredRole }
       });
 
@@ -484,7 +506,7 @@ class ApiService {
   // Obtener datos del dashboard
   async getDashboardData() {
     try {
-      const response = await apiClient.get('/dashboard/stats');
+      const response = await dashboardClient.get('/dashboard/stats');
       return {
         data: response.data,
         error: null
@@ -503,7 +525,7 @@ class ApiService {
   // Obtener participantes
   async getParticipantes() {
     try {
-      const response = await apiClient.get('/participantes');
+      const response = await dashboardClient.get('/participantes');
       return { data: response.data || [], error: null };
     } catch (error) {
       console.error('Error obteniendo participantes:', error);
@@ -523,7 +545,7 @@ class ApiService {
         };
       }
 
-      const response = await apiClient.post('/participantes', participanteData);
+      const response = await dashboardClient.post('/participantes', participanteData);
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error creando participante:', error);
@@ -546,7 +568,7 @@ class ApiService {
         };
       }
 
-      const response = await apiClient.put(`/participantes/${id}`, participanteData);
+      const response = await dashboardClient.put(`/participantes/${id}`, participanteData);
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error actualizando participante:', error);
@@ -562,7 +584,7 @@ class ApiService {
   // Eliminar participante
   async deleteParticipante(id) {
     try {
-      await apiClient.delete(`/participantes/${id}`);
+      await dashboardClient.delete(`/participantes/${id}`);
       return { error: null };
     } catch (error) {
       console.error('Error eliminando participante:', error);
@@ -579,7 +601,7 @@ class ApiService {
   // Obtener mensualidades
   async getMensualidades() {
     try {
-      const response = await apiClient.get('/mensualidades');
+      const response = await dashboardClient.get('/mensualidades');
       return { data: response.data || [], error: null };
     } catch (error) {
       console.error('Error obteniendo mensualidades:', error);
@@ -600,7 +622,7 @@ class ApiService {
         };
       }
 
-      const response = await apiClient.post('/mensualidades', mensualidadData);
+      const response = await dashboardClient.post('/mensualidades', mensualidadData);
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error creando mensualidad:', error);
@@ -623,7 +645,7 @@ class ApiService {
         };
       }
 
-      const response = await apiClient.put(`/mensualidades/${id}`, mensualidadData);
+      const response = await dashboardClient.put(`/mensualidades/${id}`, mensualidadData);
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error actualizando mensualidad:', error);
@@ -641,7 +663,7 @@ class ApiService {
   // Obtener sedes
   async getSedes() {
     try {
-      const response = await apiClient.get('/sedes');
+      const response = await dashboardClient.get('/sedes');
       return { data: response.data || [], error: null };
     } catch (error) {
       console.error('Error obteniendo sedes:', error);
@@ -654,7 +676,7 @@ class ApiService {
 
   async createSede(sedeData) {
     try {
-      const response = await apiClient.post('/sedes', sedeData);
+      const response = await dashboardClient.post('/sedes', sedeData);
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error creando sede:', error);
@@ -677,7 +699,7 @@ class ApiService {
         };
       }
 
-      const response = await apiClient.put(`/sedes/${id}`, sedeData);
+      const response = await dashboardClient.put(`/sedes/${id}`, sedeData);
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error actualizando sede:', error);
@@ -699,7 +721,7 @@ class ApiService {
         };
       }
 
-      await apiClient.delete(`/sedes/${id}`);
+      await dashboardClient.delete(`/sedes/${id}`);
       return { error: null };
     } catch (error) {
       console.error('Error eliminando sede:', error);
@@ -719,7 +741,7 @@ class ApiService {
    */
   async getUsuarios() {
     try {
-      const response = await apiClient.get('/usuarios');
+      const response = await dashboardClient.get('/usuarios');
       return { data: response.data || [], error: null };
     } catch (error) {
       console.error('Error obteniendo usuarios:', error);
@@ -744,7 +766,7 @@ class ApiService {
         };
       }
 
-      const response = await apiClient.post('/usuarios', usuarioData);
+      const response = await dashboardClient.post('/usuarios', usuarioData);
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error creando usuario:', error);
@@ -772,7 +794,7 @@ class ApiService {
         };
       }
 
-      const response = await apiClient.put(`/usuarios/${id}`, usuarioData);
+      const response = await dashboardClient.put(`/usuarios/${id}`, usuarioData);
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error actualizando usuario:', error);
@@ -798,7 +820,7 @@ class ApiService {
         };
       }
 
-      await apiClient.delete(`/usuarios/${id}`);
+      await dashboardClient.delete(`/usuarios/${id}`);
       return { error: null };
     } catch (error) {
       console.error('Error eliminando usuario:', error);
@@ -819,7 +841,7 @@ class ApiService {
    */
   async getAcudientes(filters = {}) {
     try {
-      const response = await apiClient.get('/acudientes', { params: filters });
+      const response = await dashboardClient.get('/acudientes', { params: filters });
       return { data: response.data || [], error: null };
     } catch (error) {
       console.error('Error obteniendo acudientes:', error);
@@ -844,7 +866,7 @@ class ApiService {
         };
       }
 
-      const response = await apiClient.get(`/participantes/${participanteId}/acudientes`);
+      const response = await dashboardClient.get(`/participantes/${participanteId}/acudientes`);
       return { data: response.data || [], error: null };
     } catch (error) {
       console.error('Error obteniendo acudientes del participante:', error);
@@ -862,7 +884,7 @@ class ApiService {
    */
   async createAcudiente(acudienteData) {
     try {
-      if (!acudienteData.id_participante || !acudienteData.numero_documento || 
+      if (!acudienteData.id_participante || !acudienteData.numero_documento ||
           !acudienteData.nombres || !acudienteData.apellidos) {
         return {
           data: null,
@@ -870,7 +892,7 @@ class ApiService {
         };
       }
 
-      const response = await apiClient.post('/acudientes', acudienteData);
+      const response = await dashboardClient.post('/acudientes', acudienteData);
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error creando acudiente:', error);
@@ -898,7 +920,7 @@ class ApiService {
         };
       }
 
-      const response = await apiClient.put(`/acudientes/${id}`, acudienteData);
+      const response = await dashboardClient.put(`/acudientes/${id}`, acudienteData);
       return { data: response.data, error: null };
     } catch (error) {
       console.error('Error actualizando acudiente:', error);
@@ -924,7 +946,7 @@ class ApiService {
         };
       }
 
-      await apiClient.delete(`/acudientes/${id}`);
+      await dashboardClient.delete(`/acudientes/${id}`);
       return { error: null };
     } catch (error) {
       console.error('Error eliminando acudiente:', error);
@@ -939,36 +961,36 @@ class ApiService {
   // ==================== UTILIDADES ====================
 
   /**
-   * Verifica la conexión con el backend y proporciona estado detallado
+   * Verifica la conexión con ambos backends y proporciona estado detallado
    * @returns {Promise<Object>} Objeto con información detallada de la conexión
    */
   async testConnection() {
     const startTime = Date.now();
+    const results = {
+      auth: null,
+      dashboard: null,
+      overall: { success: false, message: 'Conexión fallida' }
+    };
 
+    // Test auth service
     try {
-      const response = await apiClient.get('/health');
-      const responseTime = Date.now() - startTime;
-
-      return {
+      const authResponse = await authClient.get('/health');
+      results.auth = {
         success: true,
         connected: true,
-        responseTime,
-        status: response.status,
-        baseURL: API_BASE_URL,
-        data: response.data,
-        message: 'Conexión exitosa con el backend'
+        responseTime: Date.now() - startTime,
+        status: authResponse.status,
+        baseURL: AUTH_API_BASE_URL,
+        data: authResponse.data,
+        message: 'Conexión exitosa con auth service'
       };
     } catch (error) {
-      const responseTime = Date.now() - startTime;
       const errorInfo = generateErrorMessage(error);
-
-      console.error('Error de conexión con API:', error.message);
-
-      return {
+      results.auth = {
         success: false,
         connected: false,
-        responseTime,
-        baseURL: API_BASE_URL,
+        responseTime: Date.now() - startTime,
+        baseURL: AUTH_API_BASE_URL,
         error: error.message || 'Error de conexión',
         errorType: errorInfo.type,
         isCorsError: errorInfo.isCorsError,
@@ -977,38 +999,109 @@ class ApiService {
         message: errorInfo.message
       };
     }
+
+    // Test dashboard service
+    try {
+      const dashboardResponse = await dashboardClient.get('/health');
+      results.dashboard = {
+        success: true,
+        connected: true,
+        responseTime: Date.now() - startTime,
+        status: dashboardResponse.status,
+        baseURL: DASHBOARD_API_BASE_URL,
+        data: dashboardResponse.data,
+        message: 'Conexión exitosa con dashboard service'
+      };
+    } catch (error) {
+      const errorInfo = generateErrorMessage(error);
+      results.dashboard = {
+        success: false,
+        connected: false,
+        responseTime: Date.now() - startTime,
+        baseURL: DASHBOARD_API_BASE_URL,
+        error: error.message || 'Error de conexión',
+        errorType: errorInfo.type,
+        isCorsError: errorInfo.isCorsError,
+        isNetworkError: errorInfo.isNetworkError,
+        suggestions: errorInfo.suggestions,
+        message: errorInfo.message
+      };
+    }
+
+    // Overall result
+    const authSuccess = results.auth.success;
+    const dashboardSuccess = results.dashboard.success;
+
+    if (authSuccess && dashboardSuccess) {
+      results.overall = {
+        success: true,
+        message: 'Conexión exitosa con ambos servicios'
+      };
+    } else if (authSuccess) {
+      results.overall = {
+        success: false,
+        message: 'Auth service OK, pero dashboard service falló'
+      };
+    } else if (dashboardSuccess) {
+      results.overall = {
+        success: false,
+        message: 'Dashboard service OK, pero auth service falló'
+      };
+    } else {
+      results.overall = {
+        success: false,
+        message: 'Ambos servicios no están disponibles'
+      };
+    }
+
+    return results;
   }
 
   /**
-   * Verifica si el backend está disponible antes de operaciones críticas
+   * Verifica si los backends están disponibles antes de operaciones críticas
    * @param {number} timeout - Timeout en milisegundos (por defecto 5000ms)
-   * @returns {Promise<boolean>} true si el backend está disponible, false en caso contrario
+   * @returns {Promise<Object>} Objeto con estado de ambos servicios
    */
   async isBackendReachable(timeout = 5000) {
-    try {
-      const quickCheck = axios.create({
-        baseURL: API_BASE_URL,
-        timeout: timeout,
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
+    const results = { auth: false, dashboard: false };
 
-      await quickCheck.get('/health');
-      return true;
+    // Check auth service
+    try {
+      const authCheck = axios.create({
+        baseURL: AUTH_API_BASE_URL,
+        timeout: timeout,
+        headers: { 'Accept': 'application/json' }
+      });
+      await authCheck.get('/health');
+      results.auth = true;
     } catch (error) {
-      console.warn('Backend no disponible:', error.message);
-      return false;
+      console.warn('Auth service no disponible:', error.message);
     }
+
+    // Check dashboard service
+    try {
+      const dashboardCheck = axios.create({
+        baseURL: DASHBOARD_API_BASE_URL,
+        timeout: timeout,
+        headers: { 'Accept': 'application/json' }
+      });
+      await dashboardCheck.get('/health');
+      results.dashboard = true;
+    } catch (error) {
+      console.warn('Dashboard service no disponible:', error.message);
+    }
+
+    return results;
   }
 
   // Obtener configuración de la API
   getApiConfig() {
     return {
-      baseURL: API_BASE_URL,
+      authBaseURL: AUTH_API_BASE_URL,
+      dashboardBaseURL: DASHBOARD_API_BASE_URL,
       hasToken: !!localStorage.getItem('authToken'),
       environment: process.env.NODE_ENV,
-      isConfigured: !!API_BASE_URL
+      isConfigured: !!(AUTH_API_BASE_URL && DASHBOARD_API_BASE_URL)
     };
   }
 }
@@ -1017,5 +1110,5 @@ class ApiService {
 export const api = new ApiService();
 export default api;
 
-// Exportar cliente axios para uso directo si es necesario
-export { apiClient };
+// Exportar clientes axios para uso directo si es necesario
+export { authClient, dashboardClient };

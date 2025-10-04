@@ -46,7 +46,7 @@ const Finance = React.memo(() => {
     metodo_pago: 'all',
     busqueda: '' 
   });
-  const { isOpen: showModal, open: openModalHook, close: closeModal, data: modalData, setData: setModalData } = useModal();
+  const { isOpen: showModal, openModal: openModalHook, closeModal, modalData, updateModalData } = useModal();
 
   // Memoized form handlers to prevent unnecessary re-renders
   const handleFormDataChange = useCallback((field, value) => {
@@ -196,7 +196,7 @@ const Finance = React.memo(() => {
         fecha_pago: mensualidad.fecha_pago || '',
         observaciones: mensualidad.observaciones || ''
       });
-      setModalData(mensualidad);
+      updateModalData(mensualidad);
     } else {
       setFormData({ 
         participant_id: '', 
@@ -209,10 +209,10 @@ const Finance = React.memo(() => {
         fecha_pago: '',
         observaciones: ''
       });
-      setModalData(null);
+      updateModalData(null);
     }
     openModalHook();
-  }, [openModalHook, setModalData]);
+  }, [openModalHook, updateModalData]);
 
   const toggleStatus = useCallback(async (id, newStatus) => {
     try {

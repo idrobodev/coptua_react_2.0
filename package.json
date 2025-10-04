@@ -2,7 +2,7 @@
     "name": "fundacion-todo-por-un-alma",
     "version": "0.1.0",
     "private": true,
-    "proxy": "http://localhost:8080",
+    "proxy": "http://localhost:8081",
     "engines": {
         "node": ">=18.0.0",
         "npm": ">=8.0.0"

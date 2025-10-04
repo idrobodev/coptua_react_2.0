@@ -318,7 +318,7 @@ const AcudientesComponent = () => {
             Exportar PDF
           </button>
           <button
-            onClick={() => crearModal.open()}
+            onClick={() => crearModal.openModal()}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             <i className="fas fa-plus mr-2"></i>
@@ -447,7 +447,7 @@ const AcudientesComponent = () => {
       {/* Modales */}
       <ViewDetailsModal
         isOpen={verModal.isOpen}
-        onClose={verModal.close}
+        onClose={verModal.closeModal}
         title="Detalles del Acudiente"
         data={verModal.data ? [
           { label: 'ID', value: verModal.data.id_acudiente || verModal.data.id },
@@ -477,7 +477,7 @@ const AcudientesComponent = () => {
 
       <EditFormModal
         isOpen={editarModal.isOpen}
-        onClose={editarModal.close}
+        onClose={editarModal.closeModal}
         title="Editar Acudiente"
         onSubmit={async (formData) => {
           // Validar documento único
@@ -570,7 +570,7 @@ const AcudientesComponent = () => {
 
       <CreateFormModal
         isOpen={crearModal.isOpen}
-        onClose={crearModal.close}
+        onClose={crearModal.closeModal}
         title="Nuevo Acudiente"
         onSubmit={async (formData) => {
           // Validar documento único

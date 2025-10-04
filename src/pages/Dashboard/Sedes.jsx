@@ -195,7 +195,7 @@ const SedesComponent = () => {
   return (
     <DashboardLayout title="Gestión de Sedes" subtitle="Administra las sedes de la fundación" extraActions={
       <button
-        onClick={() => crearModal.open()}
+        onClick={() => crearModal.openModal()}
         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
       >
         <i className="fas fa-plus mr-2"></i>
@@ -237,7 +237,7 @@ const SedesComponent = () => {
                 className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer group"
                 onClick={() => {
                   verModal.setData(sede);
-                  verModal.open();
+                  verModal.openModal();
                 }}
               >
                 {/* Map */}
@@ -299,7 +299,7 @@ const SedesComponent = () => {
                       onClick={(e) => {
                         e.stopPropagation();
                         verModal.setData(sede);
-                        verModal.open();
+                        verModal.openModal();
                       }}
                       className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                     >
@@ -315,7 +315,7 @@ const SedesComponent = () => {
                             icon: 'fas fa-eye',
                             onClick: () => {
                               verModal.setData(sede);
-                              verModal.open();
+                              verModal.openModal();
                             }
                           },
                           {
@@ -323,7 +323,7 @@ const SedesComponent = () => {
                             icon: 'fas fa-edit',
                             onClick: () => {
                               editarModal.setData(sede);
-                              editarModal.open();
+                              editarModal.openModal();
                             }
                           },
                           {
@@ -350,7 +350,7 @@ const SedesComponent = () => {
       {/* Modales */}
       <ViewDetailsModal
         isOpen={verModal.isOpen}
-        onClose={verModal.close}
+        onClose={verModal.closeModal}
         title="Detalles de la Sede"
         data={verModal.data ? [
           { label: 'Nombre', value: verModal.data.nombre },
@@ -364,7 +364,7 @@ const SedesComponent = () => {
 
       <EditFormModal
         isOpen={editarModal.isOpen}
-        onClose={editarModal.close}
+        onClose={editarModal.closeModal}
         title="Editar Sede"
         onSubmit={async (formData) => {
           // Validar capacidad_maxima si está presente
@@ -411,7 +411,7 @@ const SedesComponent = () => {
 
       <CreateFormModal
         isOpen={crearModal.isOpen}
-        onClose={crearModal.close}
+        onClose={crearModal.closeModal}
         title="Nueva Sede"
         onSubmit={async (formData) => {
           if (!formData.nombre?.trim() || !formData.direccion?.trim()) {

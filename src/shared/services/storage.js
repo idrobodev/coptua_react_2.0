@@ -1,4 +1,4 @@
-import { ROLES, apiClient } from './api';
+import { ROLES, dashboardClient } from './api';
 import { dbService } from './database';
 
 const STORAGE_BASE_URL = process.env.REACT_APP_STORAGE_BASE_URL;
@@ -19,7 +19,7 @@ class StorageService {
 
     try {
       // Get signed URL from backend
-      const response = await apiClient.post('/storage/upload-url', {
+      const response = await dashboardClient.post('/storage/upload-url', {
         path: path || '',
         fileName: file.name,
         contentType: file.type || 'application/octet-stream'
@@ -59,7 +59,7 @@ class StorageService {
 
     try {
       // Get signed URL from backend
-      const response = await apiClient.post('/storage/delete-url', {
+      const response = await dashboardClient.post('/storage/delete-url', {
         path: fullPath
       });
 
@@ -81,7 +81,7 @@ class StorageService {
 
   async listFiles(path = '') {
     try {
-      const response = await apiClient.get('/storage/list', {
+      const response = await dashboardClient.get('/storage/list', {
         params: { path: path || '' }
       });
 
@@ -101,7 +101,7 @@ class StorageService {
     }
 
     try {
-      await apiClient.post('/storage/delete-folder', {
+      await dashboardClient.post('/storage/delete-folder', {
         path
       });
     } catch (error) {
@@ -116,7 +116,7 @@ class StorageService {
     }
 
     try {
-      const response = await apiClient.post('/storage/create-folder', {
+      const response = await dashboardClient.post('/storage/create-folder', {
         name: folderName,
         parentPath: parentPath || ''
       });
@@ -134,7 +134,7 @@ class StorageService {
     }
 
     try {
-      await apiClient.post('/storage/rename-folder', {
+      await dashboardClient.post('/storage/rename-folder', {
         oldName,
         newName,
         parentPath: parentPath || ''

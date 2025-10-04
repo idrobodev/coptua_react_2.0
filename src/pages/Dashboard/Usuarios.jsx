@@ -163,7 +163,7 @@ const UsuariosComponent = () => {
       extraActions={
         canEdit && (
           <button
-            onClick={() => crearModal.open()}
+            onClick={() => crearModal.openModal()}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             <i className="fas fa-plus mr-2"></i>
@@ -245,7 +245,7 @@ const UsuariosComponent = () => {
                           icon: 'fas fa-eye',
                           onClick: () => {
                             verModal.setData(usuario);
-                            verModal.open();
+                            verModal.openModal();
                           }
                         },
                         {
@@ -253,7 +253,7 @@ const UsuariosComponent = () => {
                           icon: 'fas fa-edit',
                           onClick: () => {
                             editarModal.setData(usuario);
-                            editarModal.open();
+                            editarModal.openModal();
                           }
                         }
                       ]}
@@ -281,7 +281,7 @@ const UsuariosComponent = () => {
       {/* Modales */}
       <ViewDetailsModal
         isOpen={verModal.isOpen}
-        onClose={verModal.close}
+        onClose={verModal.closeModal}
         title="Detalles del Usuario"
         data={verModal.data ? [
           { label: 'ID', value: verModal.data.id_usuario || verModal.data.id },
@@ -295,7 +295,7 @@ const UsuariosComponent = () => {
 
       <EditFormModal
         isOpen={editarModal.isOpen}
-        onClose={editarModal.close}
+        onClose={editarModal.closeModal}
         title="Editar Usuario"
         onSubmit={async (formData) => {
           // Validar email
@@ -359,7 +359,7 @@ const UsuariosComponent = () => {
 
       <CreateFormModal
         isOpen={crearModal.isOpen}
-        onClose={crearModal.close}
+        onClose={crearModal.closeModal}
         title="Nuevo Usuario"
         onSubmit={async (formData) => {
           // Validar email
