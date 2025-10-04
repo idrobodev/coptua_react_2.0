@@ -1,7 +1,22 @@
 import React from 'react';
 import { getFileType, formatFileSize, formatDate } from 'shared/utils/fileUtils';
 
-const FileListView = ({ filteredAndSortedFiles, onDownload, onDeleteFile, isAdmin }) => {
+const FileListView = ({ filteredAndSortedFiles, searchTerm, onDownload, onDeleteFile, isAdmin }) => {
+  // Function to highlight search term in text
+  const highlightText = (text, searchTerm) => {
+    if (!searchTerm || !text) return text;
+
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+
+    return parts.map((part, index) =>
+      regex.test(part) ? (
+        <mark key={index} className="bg-yellow-200 text-gray-900 px-0.5 rounded">
+          {part}
+        </mark>
+      ) : part
+    );
+  };
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -25,7 +40,7 @@ const FileListView = ({ filteredAndSortedFiles, onDownload, onDeleteFile, isAdmi
                     <i className={`${fileType.icon} ${fileType.color} mr-3 text-lg`}></i>
                     <div>
                       <div className="font-medium text-gray-900 max-w-xs truncate" title={file.nombre}>
-                        {file.nombre}
+                        {highlightText(file.nombre, searchTerm)}
                       </div>
                       <div className="text-sm text-gray-500">
                         {file.nombre.split('.').pop()?.toUpperCase()} • {fileType.category}

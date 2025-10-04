@@ -1,10 +1,25 @@
 import React from 'react';
 import { getFileType, formatFileSize, formatDate } from 'shared/utils/fileUtils';
 
-const FileGridView = ({ filteredAndSortedFiles, onDownload, onDeleteFile, isAdmin }) => {
+const FileGridView = ({ filteredAndSortedFiles, searchTerm, onDownload, onDeleteFile, isAdmin }) => {
+  // Function to highlight search term in text
+  const highlightText = (text, searchTerm) => {
+    if (!searchTerm || !text) return text;
+
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+
+    return parts.map((part, index) =>
+      regex.test(part) ? (
+        <mark key={index} className="bg-yellow-200 text-gray-900 px-0.5 rounded">
+          {part}
+        </mark>
+      ) : part
+    );
+  };
   return (
     <div className="p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {filteredAndSortedFiles.map((file) => {
           const fileType = getFileType(file.nombre);
 
@@ -46,7 +61,7 @@ const FileGridView = ({ filteredAndSortedFiles, onDownload, onDeleteFile, isAdmi
                   className="font-medium text-sm text-gray-900 truncate mb-1"
                   title={file.nombre}
                 >
-                  {file.nombre}
+                  {highlightText(file.nombre, searchTerm)}
                 </h4>
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>{file.tamaño ? formatFileSize(file.tamaño) : 'Desconocido'}</span>

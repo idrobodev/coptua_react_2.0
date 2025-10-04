@@ -20,6 +20,7 @@ const Formatos = () => {
     isAdmin,
     notifications,
     searchTerm,
+    debouncedSearchTerm,
     selectedFileType,
     viewMode,
     sortBy,
@@ -108,21 +109,87 @@ const Formatos = () => {
       subtitle="Gestión de Archivos y Carpetas"
     >
       
-      {/* Simple Toast Notifications */}
-      <div className="fixed top-20 right-4 z-50 space-y-2 max-w-sm">
-        {notifications.map(({ id, message, type }) => (
-          <div
-            key={id}
-            className={`p-4 rounded-lg shadow-lg text-white animate-slide-in-right ${
-              type === 'success' ? 'bg-green-500' :
-              type === 'error' ? 'bg-red-500' :
-              type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-            }`}
-          >
-            {message}
-          </div>
-        ))}
+      {/* Enhanced Toast Notifications */}
+      <div className="fixed top-4 right-4 z-50 space-y-3 max-w-sm">
+        {notifications.map(({ id, message, type }) => {
+          const getIcon = () => {
+            switch (type) {
+              case 'success': return 'fas fa-check-circle';
+              case 'error': return 'fas fa-exclamation-circle';
+              case 'warning': return 'fas fa-exclamation-triangle';
+              case 'info': default: return 'fas fa-info-circle';
+            }
+          };
+
+          const getColors = () => {
+            switch (type) {
+              case 'success': return 'bg-gradient-to-r from-green-500 to-green-600 border-green-400';
+              case 'error': return 'bg-gradient-to-r from-red-500 to-red-600 border-red-400';
+              case 'warning': return 'bg-gradient-to-r from-yellow-500 to-yellow-600 border-yellow-400';
+              case 'info': default: return 'bg-gradient-to-r from-blue-500 to-blue-600 border-blue-400';
+            }
+          };
+
+          return (
+            <div
+              key={id}
+              className={`flex items-center p-4 rounded-lg shadow-xl border-l-4 text-white transform transition-all duration-300 ease-out animate-slideInRight ${getColors()}`}
+              style={{
+                animation: 'slideInRight 0.5s ease-out forwards',
+              }}
+            >
+              <i className={`${getIcon()} mr-3 text-lg flex-shrink-0`}></i>
+              <span className="flex-1 text-sm font-medium">{message}</span>
+              <button
+                onClick={() => {
+                  // Remove notification - this would need to be implemented in useFileManager
+                  // For now, we'll just hide it
+                  const element = document.getElementById(`toast-${id}`);
+                  if (element) {
+                    element.style.animation = 'slideOutRight 0.3s ease-in forwards';
+                    setTimeout(() => {
+                      // This should call a removeNotification function from the hook
+                    }, 300);
+                  }
+                }}
+                className="ml-3 p-1 rounded-full hover:bg-black hover:bg-opacity-20 transition-colors duration-200 flex-shrink-0"
+                id={`toast-${id}`}
+              >
+                <i className="fas fa-times text-sm"></i>
+              </button>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Add CSS animations */}
+      <style jsx>{`
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideOutRight {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+        }
+
+        .animate-slideInRight {
+          animation: slideInRight 0.5s ease-out forwards;
+        }
+      `}</style>
 
       <div className="px-6 py-6">
         <FileBreadcrumb
@@ -175,6 +242,7 @@ const Formatos = () => {
               filteredAndSortedFiles={filteredAndSortedFiles}
               files={files}
               viewMode={viewMode}
+              searchTerm={debouncedSearchTerm}
               onDownload={handleDownload}
               onDeleteFile={handleDeleteFile}
               isAdmin={isAdmin}

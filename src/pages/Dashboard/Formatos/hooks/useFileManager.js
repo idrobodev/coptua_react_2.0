@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { storage, dbService, ROLES } from 'shared/services';
 import { getFileType } from 'shared/utils/fileUtils';
+import { useDebouncedSearch } from 'shared/hooks';
 
 const useFileManager = () => {
   // Basic state
@@ -15,6 +16,7 @@ const useFileManager = () => {
 
   // Additional state for enhanced functionality
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebouncedSearch(searchTerm, 300);
   const [selectedFileType, setSelectedFileType] = useState('all');
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [sortBy, setSortBy] = useState('createdAt'); // 'name', 'size', 'createdAt', 'type'
@@ -199,7 +201,7 @@ const useFileManager = () => {
   // Filtered and sorted files
   const filteredAndSortedFiles = useMemo(() => {
     let filtered = files.filter(file => {
-      const matchesSearch = file.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = file.nombre.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       const fileType = getFileType(file.nombre);
       const matchesType = selectedFileType === 'all' || fileType.category === selectedFileType;
       return matchesSearch && matchesType;
@@ -235,7 +237,7 @@ const useFileManager = () => {
       }
       return aValue > bValue ? 1 : -1;
     });
-  }, [files, searchTerm, selectedFileType, sortBy, sortOrder]);
+  }, [files, debouncedSearchTerm, selectedFileType, sortBy, sortOrder]);
 
   return {
     // State
@@ -248,6 +250,7 @@ const useFileManager = () => {
     isAdmin,
     notifications,
     searchTerm,
+    debouncedSearchTerm,
     selectedFileType,
     viewMode,
     sortBy,
