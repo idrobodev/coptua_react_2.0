@@ -71,14 +71,6 @@ const DashboardComponent = () => {
       onClick: () => history.push('/participantes')
     },
     {
-      title: "Acudientes",
-      value: dashboardData?.totalAcudientes || 0,
-      icon: "fas fa-user-friends",
-      color: "purple",
-      subtitle: "Total registrados",
-      onClick: () => history.push('/acudientes')
-    },
-    {
       title: "Mensualidades",
       value: dashboardData?.mensualidadesPagadas || 0,
       icon: "fas fa-dollar-sign",

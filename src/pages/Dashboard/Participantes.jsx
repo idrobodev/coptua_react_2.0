@@ -355,6 +355,7 @@ const Participantes = React.memo(() => {
           {
             type: 'search',
             name: 'busqueda',
+            label: 'Búsqueda',
             placeholder: 'Nombre, teléfono...',
             debounceMs: 300
           }
@@ -387,40 +388,6 @@ const Participantes = React.memo(() => {
               value: filteredParticipantes.filter(p => p.estado === "INACTIVO" || p.estado === "Inactivo").length,
               icon: 'fas fa-user-times',
               color: 'red'
-            },
-            {
-              title: 'Promedio Edad',
-              value: (() => {
-                if (filteredParticipantes.length === 0) return '0 años';
-                
-                const edades = filteredParticipantes.map(p => {
-                  if (p.fecha_nacimiento) {
-                    const birthDate = new Date(p.fecha_nacimiento);
-                    const today = new Date();
-                    let age = today.getFullYear() - birthDate.getFullYear();
-                    const monthDiff = today.getMonth() - birthDate.getMonth();
-                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                      age--;
-                    }
-                    return age;
-                  }
-                  return p.edad || 0;
-                });
-                
-                const promedio = Math.round(edades.reduce((sum, edad) => sum + edad, 0) / edades.length);
-                return `${promedio} años`;
-              })(),
-              icon: 'fas fa-birthday-cake',
-              color: 'blue'
-            },
-            {
-              title: 'Sedes Bello',
-              value: filteredParticipantes.filter(p => {
-                const sedeNombre = p.sede?.direccion || p.sede || '';
-                return sedeNombre.toLowerCase().includes("bello");
-              }).length,
-              icon: 'fas fa-map-marker-alt',
-              color: 'purple'
             }
           ]}
           columns={5}

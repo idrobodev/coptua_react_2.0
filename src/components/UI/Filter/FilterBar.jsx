@@ -51,6 +51,7 @@ const FilterBar = ({
             onChange={(newValue) => onChange(filter.name, newValue)}
             placeholder={filter.placeholder || 'Buscar...'}
             debounceMs={filter.debounceMs}
+            label={filter.label}
           />
         );
 

@@ -89,18 +89,6 @@ const UsuariosComponent = () => {
       value: filteredUsuarios.length,
       icon: "fas fa-users",
       color: "blue"
-    },
-    {
-      title: "Administradores",
-      value: filteredUsuarios.filter(u => u.rol === ROLES.ADMINISTRADOR).length,
-      icon: "fas fa-user-shield",
-      color: "purple"
-    },
-    {
-      title: "Consulta",
-      value: filteredUsuarios.filter(u => u.rol === ROLES.CONSULTA).length,
-      icon: "fas fa-user",
-      color: "green"
     }
   ], [filteredUsuarios]);
 
@@ -115,7 +103,7 @@ const UsuariosComponent = () => {
       <DashboardLayout title="Usuarios" subtitle="Error al cargar datos" loading={false}>
         <div className="flex items-center justify-center h-screen">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-600">Error loading usuarios: {error}</p>
+            <p className="text-red-600">Error loading usuarios del sistema: {error}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -157,8 +145,8 @@ const UsuariosComponent = () => {
   ];
 
   return (
-    <DashboardLayout 
-      title="Gestión de Usuarios" 
+    <DashboardLayout
+      title="Gestión de Usuarios del sistema"
       subtitle="Administra los usuarios del sistema"
       extraActions={
         canEdit && (
@@ -189,14 +177,14 @@ const UsuariosComponent = () => {
       {/* Tabla de Usuarios */}
       <div className="px-6 py-4">
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-800">Lista de Usuarios</h3>
+          <h3 className="text-lg font-semibold text-gray-800">Lista de Usuarios del sistema</h3>
           <p className="text-sm text-gray-600 mt-1">Gestiona los usuarios del sistema</p>
         </div>
 
         {filteredUsuarios.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <i className="fas fa-users text-gray-300 text-4xl mb-4"></i>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron usuarios</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron usuarios del sistema</h3>
             <p className="text-gray-500">No hay usuarios que coincidan con los filtros aplicados.</p>
           </div>
         ) : (
@@ -282,12 +270,12 @@ const UsuariosComponent = () => {
       <ViewDetailsModal
         isOpen={verModal.isOpen}
         onClose={verModal.closeModal}
-        title="Detalles del Usuario"
+        title="Detalles del Usuario del sistema"
         data={verModal.data ? [
           { label: 'ID', value: verModal.data.id_usuario || verModal.data.id },
           { label: 'Email', value: verModal.data.email },
-          { 
-            label: 'Rol', 
+          {
+            label: 'Rol',
             value: verModal.data.rol === ROLES.ADMINISTRADOR ? 'Administrador' : 'Consulta'
           }
         ] : []}
@@ -296,7 +284,7 @@ const UsuariosComponent = () => {
       <EditFormModal
         isOpen={editarModal.isOpen}
         onClose={editarModal.closeModal}
-        title="Editar Usuario"
+        title="Editar Usuario del sistema"
         onSubmit={async (formData) => {
           // Validar email
           const emailValidation = validateEmail(formData.email);
@@ -360,7 +348,7 @@ const UsuariosComponent = () => {
       <CreateFormModal
         isOpen={crearModal.isOpen}
         onClose={crearModal.closeModal}
-        title="Nuevo Usuario"
+        title="Nuevo Usuario del sistema"
         onSubmit={async (formData) => {
           // Validar email
           const emailValidation = validateEmail(formData.email);
